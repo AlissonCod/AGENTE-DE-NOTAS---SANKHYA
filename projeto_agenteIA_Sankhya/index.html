@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EucaVerify - Eucamad</title>
+
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <!-- Custom CSS -->
+    <style>
+      /*---------------------------------------------------*/
+      /* 1. Variáveis de Cor (Paletas Eucamad)
+      /*---------------------------------------------------*/
+      :root {
+        --eucamad-green: #6f8f3d;
+        --eucamad-dark-green: #1f5329;
+        --eucamad-wood: #c49a5a;
+        --eucamad-light-gray: #f5f5f2;
+        --eucamad-dark-gray: #e9e1e1;
+        --eucamad-white: #ffffff;
+        --eucamad-danger: #e74c3c;
+        --eucamad-warning: #f39c12;
+      }
+
+      /*---------------------------------------------------*/
+      /* 2. Estilos Globais e Tipografia
+      /*---------------------------------------------------*/
+      body {
+        font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: var(--eucamad-light-gray);
+        color: var(--eucamad-dark-gray);
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      app-header shadow-smadow-sm {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      h1, h2, h3, h4, h5, h6 {
+        font-weight: 700;
+        color: var(--eucamad-dark-green);
+      }
+
+      /*---------------------------------------------------*/
+      /* 3. Layout (Header, Main, Footer)
+      /*---------------------------------------------------*/
+      .app-header {
+        background-color: #212529;
+        padding: 1rem 0;
+        border-bottom: 1px solid #020000;
+      }
+
+      .app-header .logo {
+        height: 40px;
+        width: auto;
+      }
+
+      main {
+        flex: 1;
+      }
+
+      .container {
+        max-width: 800px;
+      }
+
+      .app-footer {
+        background-color: var(--eucamad-dark-green);
+        color: var(--eucamad-white);
+        padding: 2rem 0;
+        margin-top: 4rem;
+      }
+
+      .app-footer a {
+        color: var(--eucamad-light-gray);
+        text-decoration: none;
+      }
+
+      .app-footer a:hover {
+        text-decoration: underline;
+      }
+
+      /*---------------------------------------------------*/
+      /* 4. Componentes (Botões, Cards, Inputs)
+      /*---------------------------------------------------*/
+      .card {
+        border: none;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+
+      .form-control-lg {
+        font-family: monospace;
+        font-size: 1rem;
+        border-radius: 0.375rem;
+      }
+
+      .btn-primary {
+        background-color: var(--eucamad-green);
+        border-color: var(--eucamad-green);
+        font-weight: 600;
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem;
+      }
+
+      .btn-primary:hover, .btn-primary:focus {
+        background-color: var(--eucamad-dark-green);
+        border-color: var(--eucamad-dark-green);
+      }
+
+      .btn-secondary {
+        background-color: var(--eucamad-wood);
+        border-color: var(--eucamad-wood);
+        font-weight: 600;
+        color: var(--eucamad-white);
+      }
+
+      .btn-secondary:hover, .btn-secondary:focus {
+        background-color: #a9844c;
+        border-color: #a9844c;
+        color: var(--eucamad-white);
+      }
+
+      /*---------------------------------------------------*/
+      /* 5. Utilitários e Helpers
+      /*---------------------------------------------------*/
+      .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        border-width: 0.2em;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="app-header shadow-sm">
+      <div class="container">
+        <img
+          src="https://eucamad.com.br/linoor/upllive/images/logo_white.png?v=50:12"
+          alt="Logo Eucamad"
+          class="logo"
+        />
+      </div>
+    </header>
+
+    <main>
+      <div class="container mt-5">
+        <div class="text-center mb-5">
+          <h1 class="display-6">Agente de Conferência Fiscal</h1>
+          <p class="lead text-secondary">
+            Transformando madeira de reflorestamento em soluções eficientes.
+          </p>
+        </div>
+
+        <!-- Card de Ação Principal -->
+        <div class="card mb-4">
+          <div class="card-body p-4">
+            <div class="mb-3">
+              <label for="chaveNfe" class="form-label fw-semibold"
+                >Chave de Acesso da NF-e (44 dígitos)</label
+              >
+              <input
+                type="text"
+                class="form-control form-control-lg"
+                id="chaveNfe"
+                placeholder="Cole os 44 números da chave aqui..."
+                maxlength="44"
+                aria-label="Chave de Acesso da NF-e"
+              />
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-primary btn-lg" id="btnVerificar">
+                <span id="btn-text">Verificar Nota no Sankhya</span>
+                <span
+                  id="btn-spinner"
+                  class="spinner-border spinner-border-sm d-none"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card para Processamento em Lote -->
+        <div class="card mb-4">
+          <div class="card-body p-4">
+            <h5 class="card-title">Processamento em Lote</h5>
+            <p class="card-text text-secondary">
+              Verifica a chave de notas as notas com a TOP 1724.
+            </p>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label for="dataInicio" class="form-label fw-semibold">Data Início</label>
+                <input type="date" class="form-control" id="dataInicio" />
+              </div>
+              <div class="col-md-6">
+                <label for="dataFim" class="form-label fw-semibold">Data Fim</label>
+                <input type="date" class="form-control" id="dataFim" />
+              </div>
+            </div>
+            <small id="lote-date-error" class="text-danger d-none mb-3 d-block">
+              Por favor, selecione as datas de início e fim.
+            </small>
+
+            <div class="d-grid">
+              <button class="btn btn-secondary btn-lg" id="btnProcessarLote">
+                <span id="btn-lote-text">Processar Lotes Pendentes</span>
+                <span
+                  id="btn-lote-spinner"
+                  class="spinner-border spinner-border-sm d-none"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card para Detalhes das Notas do Lote -->
+        <div id="area-detalhes-lote" class="d-none">
+          <div class="card mb-4">
+            <div
+              class="card-header d-flex justify-content-between align-items-center"
+            >
+              <h5 class="mb-0">Detalhes do Processamento em Lote</h5>
+              <button class="btn btn-success" id="btnExportarExcel">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Divergências
+              </button>
+            </div>
+            <div class="card-body">
+              <div id="lote-summary" class="mb-3"></div>
+              <div class="row">
+                <div class="col-md-6">
+                  <h6><i class="bi bi-check-circle-fill text-success"></i> Notas Aprovadas</h6>
+                  <div id="lote-aprovadas" class="list-group list-group-flush"></div>
+                </div>
+                <div class="col-md-6">
+                  <h6><i class="bi bi-exclamation-triangle-fill text-warning"></i> Notas com Divergência ou Revisão</h6>
+                  <div id="lote-divergentes" class="list-group list-group-flush"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Área de Resultados -->
+        <div id="area-resultado" class="d-none">
+          <div class="card">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">Resultado da Análise</h5>
+            </div>
+            <div class="card-body p-4">
+              <div id="status-badge" class="alert" role="alert">
+                <strong id="status-texto"></strong>
+                <p id="status-mensagem" class="mb-0"></p>
+              </div>
+              <div id="detalhes-processamento"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <div class="container text-center">
+        <p class="mb-1">
+          &copy; 2024 Eucamad. Excelência em desdobramento de madeira de
+          eucalipto no Brasil.
+        </p>
+        <p class="small">
+          <a href="https://eucamad.com.br/contato/" target="_blank" rel="noopener noreferrer">Desenvolvido por Alisson - Analista de T.I</a>
+        </p>
+      </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- JavaScript da Aplicação -->
+    <script>
+      const btnVerificar = document.getElementById("btnVerificar");
+      const inputChave = document.getElementById("chaveNfe");
+      const areaResultado = document.getElementById("area-resultado");
+      const statusBadge = document.getElementById("status-badge");
+      const statusTexto = document.getElementById("status-texto");
+      const statusMensagem = document.getElementById("status-mensagem");
+      const detalhesProcessamento = document.getElementById("detalhes-processamento");
+      const btnText = document.getElementById("btn-text");
+      const btnSpinner = document.getElementById("btn-spinner");
+
+      const btnProcessarLote = document.getElementById("btnProcessarLote");
+      const btnLoteText = document.getElementById("btn-lote-text");
+      const btnLoteSpinner = document.getElementById("btn-lote-spinner");
+      const btnExportarExcel = document.getElementById("btnExportarExcel");
+
+      const areaDetalhesLote = document.getElementById("area-detalhes-lote");
+      const loteSummary = document.getElementById("lote-summary");
+      const loteAprovadas = document.getElementById("lote-aprovadas");
+      const loteDivergentes = document.getElementById("lote-divergentes");
+
+
+      const statusCores = {
+        APROVADO: { bg: "bg-success-subtle", text: "text-success-emphasis" },
+        REVISAO_MANUAL: { bg: "bg-warning-subtle", text: "text-warning-emphasis" },
+        FORA_DO_ESCOPO: { bg: "bg-secondary-subtle", text: "text-secondary-emphasis" },
+        DIVERGENTE: { bg: "bg-danger-subtle", text: "text-danger-emphasis" },
+        ERRO_TECNICO: { bg: "bg-danger-subtle", text: "text-danger-emphasis" },
+        ERRO_VALIDACAO: { bg: "bg-danger-subtle", text: "text-danger-emphasis" },
+      };
+
+      // Variável global para armazenar os resultados do lote
+      let resultadosLoteGlobais = [];
+
+      btnVerificar.addEventListener("click", async () => {
+        const chave = inputChave.value.trim();
+        if (chave.length === 0) {
+          alert("Por favor, insira a chave da NF-e.");
+          return;
+        }
+
+        // UI de carregamento
+        btnVerificar.disabled = true;
+        btnText.textContent = "Processando...";
+        btnSpinner.classList.remove("d-none");
+        areaResultado.classList.add("d-none");
+
+        try {
+          const response = await fetch("/validar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chave: chave }),
+          });
+
+          const data = await response.json();
+
+          // Atualiza a UI com o resultado
+          const status = data.status || "ERRO_TECNICO";
+          const cores = statusCores[status] || statusCores.ERRO_TECNICO;
+          statusBadge.className = `alert ${cores.bg} ${cores.text}`;
+          statusTexto.textContent = `STATUS: ${status}`;
+          statusMensagem.textContent =
+            data.mensagem || "Não foi possível obter a mensagem.";
+
+          // Gera a visualização amigável dos detalhes
+          detalhesProcessamento.innerHTML = gerarHtmlDetalhes(data);
+
+          areaResultado.classList.remove("d-none");
+        } catch (error) {
+          document.documentElement.setAttribute("data-bs-theme", "light");
+          statusBadge.className = "alert alert-danger";
+          statusTexto.textContent = "ERRO DE CONEXÃO";
+          statusMensagem.textContent = "Não foi possível se comunicar com o servidor.";
+          detalhesProcessamento.innerHTML = `<pre>${error.toString()}</pre>`;
+          areaResultado.classList.remove("d-none");
+        } finally {
+          // Restaura a UI
+          btnVerificar.disabled = false;
+          btnText.textContent = "Verificar Nota no Sankhya";
+          btnSpinner.classList.add("d-none");
+        }
+      });
+
+      function gerarHtmlDetalhes(data) {
+        if (!data || !data.dados) {
+          return `<p class="text-secondary">Não há detalhes adicionais para exibir.</p>`;
+        }
+
+        const cabecalho = data.dados.cabecalho || {};
+        const validacaoIcms = data.dados.validacao_icms;
+
+        const numNota = cabecalho.NUMNOTA || 'N/A';
+        const serie = cabecalho.SERIENOTA || 'N/A';
+        const fornecedor = cabecalho.NOMEPARC || 'N/A';
+        const valor = cabecalho.VLRNOTA
+          ? `R$ ${parseFloat(cabecalho.VLRNOTA).toLocaleString("pt-BR", {
+              minimumFractionDigits: 2,
+            })}`
+          : "N/A";
+        const dataNeg = cabecalho.DTNEG ? new Date(cabecalho.DTNEG).toLocaleDateString('pt-BR') : 'N/A';
+
+        let html = `
+            <div class="list-group">
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">Nota Fiscal</h6>
+                        <small class="text-secondary">${numNota} / ${serie}</small>
+                    </div>
+                </div>
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">Fornecedor</h6>
+                        <small class="text-secondary">${fornecedor}</small>
+                    </div>
+                </div>
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">Valor Total</h6>
+                        <small class="text-secondary fw-bold">${valor}</small>
+                    </div>
+                </div>
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">Data</h6>
+                        <small class="text-secondary">${dataNeg}</small>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (validacaoIcms) {
+            html += `<h6 class="mt-4">Análise dos Itens</h6>`;
+
+            const { total_itens, total_aprovados, total_divergentes, total_revisao_manual, validacoes, divergencias, revisoes } = validacaoIcms;
+
+            html += `<p>${total_aprovados} de ${total_itens} itens aprovados.`;
+            if (total_divergentes > 0) html += ` <span class="badge bg-danger">${total_divergentes} divergente(s)</span>`;
+            if (total_revisao_manual > 0) html += ` <span class="badge bg-warning text-black">${total_revisao_manual} para revisão</span>`;
+            html += `</p>`;
+
+            // Combine todos os itens (aprovados, divergentes, revisão) para exibição
+            const allProcessedItems = [
+                ...(validacoes || []),
+                ...(divergencias || []),
+                ...(revisoes || [])
+            ];
+
+            if (allProcessedItems.length > 0) {
+                html += `<h6 class="mt-4">Itens da Nota Fiscal:</h6>`;
+                html += `<ul class="list-group">`;
+                allProcessedItems.forEach(item => {
+                    const status = item.status || 'DESCONHECIDO';
+                    const cores = statusCores[status] || statusCores.FORA_DO_ESCOPO;
+                    const corBadge = `${cores.bg} ${cores.text}`;
+                    const descrProd = item.descrprod || 'Descrição não disponível';
+                    const motivo = item.resultado_regra?.motivo || item.mensagem || 'Motivo não especificado.';
+                    const qtd = item.quantidade || 0;
+                    const vlrUnit = item.valor_unitario ? parseFloat(item.valor_unitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A';
+                    const vlrTotal = item.valor_total ? parseFloat(item.valor_total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A';
+                    const cfop = item.cfop || 'N/A';
+                    const cstIcms = item.cst_icms || 'N/A';
+
+                    html += `<li class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1"><span class="badge rounded-pill ${corBadge} me-2">${item.status}</span> Item ${item.codprod} - ${descrProd}</h6>
+                                </div>
+                                <p class="mb-1">${motivo}</p>
+                                <div class="row row-cols-2 row-cols-md-3 g-2 mt-2 small text-body-secondary">
+                                    <div class="col"><strong>CFOP:</strong> ${cfop}</div>
+                                    <div class="col"><strong>CST ICMS:</strong> ${cstIcms}</div>
+                                    <div class="col"><strong>Qtd:</strong> ${qtd}</div>
+                                    <div class="col"><strong>Vlr. Unit.:</strong> ${vlrUnit}</div>
+                                    <div class="col"><strong>Vlr. Total:</strong> ${vlrTotal}</div>
+                                </div>
+                             </li>`;
+                });
+                html += `</ul>`;
+            }
+        }
+
+        return html;
+      }
+
+      // Adiciona inputs de data para o lote
+      const dataInicioInput = document.getElementById("dataInicio");
+      const dataFimInput = document.getElementById("dataFim");
+      const loteDateError = document.getElementById("lote-date-error");
+
+      btnProcessarLote.addEventListener("click", async () => {
+        const dataInicio = dataInicioInput.value;
+        const dataFim = dataFimInput.value;
+
+        if (!dataInicio || !dataFim) {
+          loteDateError.classList.remove("d-none");
+          return;
+        }
+        loteDateError.classList.add("d-none");
+
+        // Formata a data de YYYY-MM-DD para DD/MM/YYYY
+        const formatarData = (data) => {
+          const [ano, mes, dia] = data.split('-');
+          return `${dia}/${mes}/${ano}`;
+        };
+
+        // UI de carregamento
+        btnProcessarLote.disabled = true;
+        btnLoteText.textContent = "Consultando e processando...";
+        btnLoteSpinner.classList.remove("d-none");        
+
+        try {
+            const response = await fetch("/processar-lote", { 
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ 
+                "data_inicio": formatarData(dataInicio),
+                "data_fim": formatarData(dataFim)
+              }),
+            });
+            const resultados = await response.json();
+
+            // Armazena os resultados para exportação
+            resultadosLoteGlobais = resultados;
+            
+            // Limpa as listas antes de popular
+            loteAprovadas.innerHTML = "";
+            loteDivergentes.innerHTML = "";
+            loteSummary.innerHTML = "";
+
+            if (Array.isArray(resultados)) {
+                let aprovadasCount = 0;
+                let divergentesCount = 0;
+
+                resultados.forEach(res => {
+                    const status = res.status || "ERRO";
+                    const isAprovado = status === "APROVADO";
+                    const cores = statusCores[status] || statusCores.ERRO_TECNICO;
+                    const corBadge = `${cores.bg} ${cores.text}`;
+                    const chave = res.dados?.chave_nfe || res.chave_original || 'N/A';
+                    const mensagem = res.mensagem || "Sem detalhes.";
+
+                    const itemHtml = `
+                        <div class="list-group-item list-group-item-action flex-column align-items-start p-2">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1"><span class="badge rounded-pill ${corBadge} me-2">${status}</span></h6>
+                            </div>
+                            <p class="mb-1 small">${mensagem}</p>
+                            <small class="text-body-secondary text-monospace">${chave}</small>
+                        </div>`;
+
+                    if (isAprovado) {
+                        loteAprovadas.innerHTML += itemHtml;
+                        aprovadasCount++;
+                    } else {
+                        loteDivergentes.innerHTML += itemHtml;
+                        divergentesCount++;
+                    }
+                });
+
+                loteSummary.innerHTML = `<p><strong>${resultados.length} notas processadas:</strong> ${aprovadasCount} aprovada(s) e ${divergentesCount} com divergência/revisão.</p>`;
+
+            } else {
+                // Trata caso de não ser uma lista (ex: nenhuma nota encontrada)
+                const mensagem = resultados.mensagem || "Nenhuma nota encontrada para o período.";
+                loteSummary.innerHTML = `<div class="alert alert-secondary">${mensagem}</div>`;
+            }
+
+            areaDetalhesLote.classList.remove("d-none");
+
+        } catch (error) {
+            loteSummary.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Erro de Conexão</strong>
+                    <p>Não foi possível se comunicar com o servidor para processar o lote.</p>
+                    <pre>${error.toString()}</pre>
+                </div>`;
+            areaDetalhesLote.classList.remove("d-none");
+        } finally {
+            // Restaura a UI
+            btnProcessarLote.disabled = false;
+            btnLoteText.textContent = "Processar Lotes Pendentes";
+            btnLoteSpinner.classList.add("d-none");
+        }
+      });
+
+      btnExportarExcel.addEventListener("click", async () => {
+        if (!resultadosLoteGlobais || resultadosLoteGlobais.length === 0) {
+          alert("Não há dados para exportar.");
+          return;
+        }
+
+        const btnOriginalText = btnExportarExcel.innerHTML;
+        btnExportarExcel.disabled = true;
+        btnExportarExcel.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Gerando...`;
+
+        try {
+          const response = await fetch("/exportar-lote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(resultadosLoteGlobais),
+          });
+
+          if (!response.ok) {
+            const erro = await response.json();
+            alert(`Erro ao exportar: ${erro.erro || 'Erro desconhecido.'}`);
+            return;
+          }
+
+          // Inicia o download do arquivo
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.style.display = "none";
+          a.href = url;
+          a.download = "relatorio_conferencia_nfe.xlsx";
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+        } finally {
+          btnExportarExcel.disabled = false;
+          btnExportarExcel.innerHTML = btnOriginalText;
+        }
+      });
+    </script>
+  </body>
+</html>
