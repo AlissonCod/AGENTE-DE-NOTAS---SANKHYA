@@ -282,6 +282,25 @@
       </div>
     </main>
 
+    <!-- Modal para Detalhes da Nota -->
+    <div class="modal fade" id="modalDetalhesNota" tabindex="-1" aria-labelledby="modalDetalhesNotaLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalDetalhesNotaLabel">Detalhes da Análise da NF-e</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="modalDetalhesNotaBody">
+            <!-- O conteúdo será injetado aqui via JavaScript -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
     <footer class="app-footer">
       <div class="container text-center">
         <p class="mb-1">
@@ -543,13 +562,14 @@
                     const mensagem = res.mensagem || "Sem detalhes.";
 
                     const itemHtml = `
-                        <div class="list-group-item list-group-item-action flex-column align-items-start p-2">
+                        <button type="button" class="list-group-item list-group-item-action flex-column align-items-start p-2" onclick="mostrarDetalhesLote(${resultados.indexOf(res)})">
                             <div class="d-flex w-100 justify-content-between">
                                 <h6 class="mb-1"><span class="badge rounded-pill ${corBadge} me-2">${status}</span></h6>
+                                <i class="bi bi-box-arrow-up-right small"></i>
                             </div>
                             <p class="mb-1 small">${mensagem}</p>
                             <small class="text-body-secondary text-monospace">${chave}</small>
-                        </div>`;
+                        </button>`;
 
                     if (isAprovado) {
                         loteAprovadas.innerHTML += itemHtml;
@@ -585,6 +605,17 @@
             btnLoteSpinner.classList.add("d-none");
         }
       });
+
+      function mostrarDetalhesLote(index) {
+        const resultadoNota = resultadosLoteGlobais[index];
+        if (!resultadoNota) return;
+
+        const modalBody = document.getElementById('modalDetalhesNotaBody');
+        modalBody.innerHTML = gerarHtmlDetalhes(resultadoNota);
+
+        const modal = new bootstrap.Modal(document.getElementById('modalDetalhesNota'));
+        modal.show();
+      }
 
       btnExportarExcel.addEventListener("click", async () => {
         if (!resultadosLoteGlobais || resultadosLoteGlobais.length === 0) {
