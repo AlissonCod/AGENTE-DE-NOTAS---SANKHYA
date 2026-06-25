@@ -3,5 +3,4 @@
  openpyxl
  requests
  python-dotenv
- customtkinter
  gunicorn
