@@ -15,7 +15,7 @@ def validar_regras_icms_uso_consumo(cst: str, cfop: str, uf_origem: str) -> Dict
         "2556": ["00", "0"],  # Operações Interestaduais
         "1407": ["60"],  # compra de mercadorias destinadas a uso ou consumo
         "2407": ["60"],  # compra de mercadorias destinadas a uso ou consumo
-        "1603": ["60", "61"] #Combustiveis 
+        "1653": ["60", "61"] #Combustiveis 
     }
     
     if cfop not in tabela_decisao:
