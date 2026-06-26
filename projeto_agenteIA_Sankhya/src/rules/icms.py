@@ -11,11 +11,12 @@ def validar_regras_icms_uso_consumo(cst: str, cfop: str, uf_origem: str) -> Dict
     """
     
     tabela_decisao = {
-        "1556": ["90"], # Operações Internas
+        "1556": ["90", "51"], # Operações Internas
         "2556": ["00", "0"],  # Operações Interestaduais
         "1407": ["60"],  # compra de mercadorias destinadas a uso ou consumo
         "2407": ["60"],  # compra de mercadorias destinadas a uso ou consumo
-        "1653": ["60", "61"] #Combustiveis 
+        "1653": ["00","0","60", "61"], #Combustiveis 
+        "2653": ["00","0","60", "61"] #Combustiveis INTERESTADUAL
     }
     
     if cfop not in tabela_decisao:
@@ -31,10 +32,10 @@ def validar_regras_icms_uso_consumo(cst: str, cfop: str, uf_origem: str) -> Dict
             "motivo": f"CST '{cst}' incompatível com o CFOP '{cfop}'. Os CSTs aceitos são: {', '.join(csts_permitidos)}."
         }
         
-    if cfop == "2556" and uf_origem == "EX": 
+    if cfop in ["2556", "2653"] and uf_origem == "EX": 
         return {
             "status": "REPROVADO",
-            "motivo": "O CFOP '2556' (Interestadual) não deve ser utilizado em importações do exterior ('EX')."
+            "motivo": "O CFOP '2556 ou 2653' (Interestadual) não deve ser utilizado em importações do exterior ('EX')."
         }
         
     return {
