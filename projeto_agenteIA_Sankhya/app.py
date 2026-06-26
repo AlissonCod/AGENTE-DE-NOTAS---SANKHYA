@@ -1,6 +1,7 @@
 import logging
 from flask import Flask, jsonify, render_template, request, send_file
 import time
+import traceback
 import pandas as pd
 import io
 
@@ -14,28 +15,46 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------
 
 app = Flask(__name__, template_folder='.')
-sankhya_client = None
 
+# --- INICIALIZAÇÃO ÚNICA DO CLIENTE SANKHYA ---
+# O cliente é inicializado uma vez quando o processo do Flask/Gunicorn começa.
+# Isso evita re-autenticações desnecessárias e resolve o problema do 405
+# em health checks (GET) que acionavam a autenticação (POST).
+logger.info("Inicializando cliente Sankhya para a aplicação Flask...")
+sankhya_client = autenticar_sankhya()
+if sankhya_client:
+    logger.info("Cliente Sankhya autenticado e pronto para uso.")
+else:
+    logger.error("FALHA CRÍTICA: Não foi possível autenticar o cliente Sankhya na inicialização.")
 
-def inicializar_cliente_sankhya():
-    """
-    Autentica na API Sankhya e armazena o cliente globalmente.
-    Esta função é chamada uma vez antes da primeira requisição.
-    
-    """
-    global sankhya_client
-    if sankhya_client is None:
-        logger.info("Inicializando cliente Sankhya para a aplicação Flask...")
-        sankhya_client = autenticar_sankhya()
-        if sankhya_client:
-            logger.info("Cliente Sankhya autenticado e pronto para uso.")
-        else:
-            logger.error("FALHA CRÍTICA: Não foi possível autenticar o cliente Sankhya na inicialização.")
-
+# ---------------------------------------------------------
+# LOGS E HANDLERS DE ERRO
+# ---------------------------------------------------------
 
 @app.before_request
-def before_first_request_func():
-    inicializar_cliente_sankhya()
+def log_request_info():
+    """Log detalhado para cada requisição recebida."""
+    logger.info(
+        "REQ method=%s path=%s url=%s origin=%s content_type=%s",
+        request.method,
+        request.path,
+        request.url,
+        request.headers.get("Origin"),
+        request.headers.get("Content-Type")
+    )
+
+@app.errorhandler(405)
+def erro_405(e):
+    """Handler específico para erros de 'Método Não Permitido'."""
+    valid_methods = getattr(e, "valid_methods", None)
+    logger.error(
+        "405 Method Not Allowed | method=%s | path=%s | allowed=%s",
+        request.method, request.path, valid_methods
+    )
+    return jsonify({
+        "status": "ERRO_405", "mensagem": "Método HTTP não permitido para esta rota.",
+        "rota": request.path, "metodo_recebido": request.method, "metodos_permitidos": valid_methods
+    }), 405
 
 @app.errorhandler(Exception)
 def handle_exception(e):
@@ -128,35 +147,49 @@ def buscar_chaves_pendentes_no_banco(data_inicio: str, data_fim: str):
 @app.route("/processar-lote", methods=["POST"])
 def processar_lote():
     """Endpoint para processar um lote de NF-es pendentes do banco."""
-    dados = request.get_json()
-    if not dados or "data_inicio" not in dados or "data_fim" not in dados:
-        return jsonify({"erro": "Parâmetros 'data_inicio' e 'data_fim' (DD/MM/YYYY) são obrigatórios."}), 400
+    try:
+        logger.info("=== INICIO /processar-lote ===")
+        logger.info("BODY RAW: %s", request.get_data(as_text=True))
 
-    if not sankhya_client:
-        return jsonify({"erro": "Erro crítico: Cliente Sankhya não está autenticado."}), 503
+        dados = request.get_json(silent=True)
+        logger.info("JSON RECEBIDO: %s", dados)
 
-    chaves_pendentes = buscar_chaves_pendentes_no_banco(
-        data_inicio=dados["data_inicio"],
-        data_fim=dados["data_fim"]
-    )
-    
-    if not chaves_pendentes:
-        return jsonify({"status": "CONCLUIDO", "mensagem": "Nenhuma chave encontrada para o período."}), 200
+        if not dados or "data_inicio" not in dados or "data_fim" not in dados:
+            return jsonify({"erro": "Parâmetros 'data_inicio' e 'data_fim' (DD/MM/YYYY) são obrigatórios."}), 400
 
-    resultados = []
-    
-    for chave in chaves_pendentes:
-        try:
-            chave_limpa = limpar_chave_nfe(chave)
-            resultado = processar_nfe(client=sankhya_client, chave_nfe=chave_limpa)
-            resultados.append(resultado)
-        except ValueError as e:
-            resultados.append({"status": "ERRO_VALIDACAO", "chave_original": chave, "mensagem": str(e)})
-        except Exception as e:
-            logger.error(f"Erro inesperado ao processar a chave em lote '{chave}': {e}", exc_info=True)
-            resultados.append({"status": "ERRO_TECNICO", "chave_original": chave, "mensagem": "Erro inesperado no servidor."})
+        if not sankhya_client:
+            return jsonify({"erro": "Erro crítico: Cliente Sankhya não está autenticado."}), 503
 
-    return jsonify(resultados)
+        chaves_pendentes = buscar_chaves_pendentes_no_banco(
+            data_inicio=dados["data_inicio"],
+            data_fim=dados["data_fim"]
+        )
+        
+        if not chaves_pendentes:
+            return jsonify({"status": "CONCLUIDO", "mensagem": "Nenhuma chave encontrada para o período."}), 200
+
+        resultados = []
+        
+        for chave in chaves_pendentes:
+            try:
+                chave_limpa = limpar_chave_nfe(chave)
+                resultado = processar_nfe(client=sankhya_client, chave_nfe=chave_limpa)
+                resultados.append(resultado)
+            except ValueError as e:
+                resultados.append({"status": "ERRO_VALIDACAO", "chave_original": chave, "mensagem": str(e)})
+            except Exception as e:
+                logger.error(f"Erro inesperado ao processar a chave em lote '{chave}': {e}", exc_info=True)
+                resultados.append({"status": "ERRO_TECNICO", "chave_original": chave, "mensagem": "Erro inesperado no servidor."})
+
+        logger.info("=== FIM /processar-lote ===")
+        return jsonify(resultados)
+
+    except Exception as e:
+        logger.error("=== ERRO FATAL EM /processar-lote ===")
+        logger.error("TIPO ERRO: %s", type(e).__name__)
+        logger.error("ERRO: %s", str(e))
+        logger.error(traceback.format_exc())
+        return jsonify({"status": "ERRO_FATAL_SERVIDOR", "mensagem": str(e), "tipo_erro": type(e).__name__}), 500
 
 
 @app.route("/exportar-lote", methods=["POST"])
