@@ -1,5 +1,6 @@
-flask
-pandas
-requests
-python-dotenv
-openpyxl
+ flask
+ pandas
+ openpyxl
+ requests
+ python-dotenv
+ gunicorn
