@@ -37,6 +37,16 @@ def inicializar_cliente_sankhya():
 def before_first_request_func():
     inicializar_cliente_sankhya()
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """
+    Manipulador de erro global. Captura qualquer exceção não tratada
+    e a retorna em formato JSON padronizado, evitando respostas em HTML.
+    """
+    # Para um log mais detalhado do erro no servidor
+    logger.error(f"Erro não tratado na aplicação: {e}", exc_info=True)
+    return jsonify({"status": "ERRO_FATAL_SERVIDOR", "mensagem": f"Ocorreu um erro inesperado no servidor: {e}"}), 500
+
 # ---------------------------------------------------------
 # ROTAS DA APLICAÇÃO
 # ---------------------------------------------------------
