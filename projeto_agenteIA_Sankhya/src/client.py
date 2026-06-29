@@ -17,7 +17,7 @@ class SankhyaClient:
         self.auth = AuthManager()
         self.session = requests.Session()
 
-        if not self.auth.authenticate():
+        if not self.auth.force_refresh_token():
             logger.error("Falha ao obter o Bearer Token do Gateway Sankhya.")
             raise ValueError("Erro Crítico de Autenticação: Não foi possível obter o token.")
 
