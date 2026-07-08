@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EucaVerify - Eucamad</title>
+    <meta name="description" content="Agente de Conferência Fiscal Eucamad — validação automática de NF-e por CFOP, CST e UF de origem." />
+    <link rel="icon" href="https://eucamad.com.br/inspinia-2.7.1/upllive/images/favicon.ico?v=51:45" type="image/x-icon" />
 
-    <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
 
-    <!-- Bootstrap CSS -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -21,222 +21,481 @@
       crossorigin="anonymous"
     />
 
-    <!-- Bootstrap Icons -->
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
 
-    <!-- Custom CSS -->
     <style>
+      /* Paleta de Cores - Eucamad */
       :root {
-        --eucamad-green: #6f8f3d;
-        --eucamad-dark-green: #1f5329;
-        --eucamad-wood: #c49a5a;
-        --eucamad-light-gray: #f5f5f2;
-        --eucamad-dark-gray: #e9e1e1;
-        --eucamad-white: #ffffff;
-        --eucamad-danger: #e74c3c;
-        --eucamad-warning: #f39c12;
+        /* Base / Neutros */
+        --color-dark: #0e1410;
+        --color-black: #000000;
+        --color-white: #ffffff;
+        --color-gray-light: #f4f4f2;
+        --color-border: #e0e0e0;
+
+        /* Institucional (Eco/Madeira) */
+        --color-primary-green: #2f6b3a;
+        --color-green-dark: #1d3f22;
+        --color-green-light: #6fa46f;
+        --color-wood-brown: #7a5230;
+        --color-wood-dark: #3e2c1c;
+
+        /* Texto */
+        --color-text-main: #1a1a1a;
+        --color-text-light: #ffffff;
+        --color-text-muted: #6b6b6b;
+
+        /* Semânticas */
+        --danger: #d1685a;
+        --danger-bg: rgba(209, 104, 90, 0.12);
+        --warning: #d9a84e;
+        --warning-bg: rgba(217, 168, 78, 0.12);
+        --success-bg: rgba(47, 107, 58, 0.1);
+        --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.08);
+        --shadow-lift: 0 8px 24px rgba(0, 0, 0, 0.12);
+        --transition: 180ms ease;
       }
 
+      * { box-sizing: border-box; }
+
+      ::selection { background: rgba(139, 168, 92, 0.35); color: var(--parchment); }
+
+      /* Troca para o tema claro */
       body {
-        font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, "Helvetica Neue", Arial, sans-serif;
-        background-color: var(--eucamad-light-gray);
-        color: var(--eucamad-dark-gray);
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: var(--color-white);
+        color: var(--color-text-muted);
         display: flex;
         flex-direction: column;
         min-height: 100vh;
       }
 
-      h1,
-      h2,
-      h3,
-      h4,
-      h5,
-      h6 {
-        font-weight: 700;
-        color: var(--eucamad-dark-green);
+      @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; animation: none !important; }
       }
 
+      h1, h2, h3, h4, h5, h6 {
+        font-family: "Fraunces", serif;
+        font-weight: 600;
+        color: var(--color-text-main);
+        letter-spacing: -0.01em;
+      }
+
+      .mono { font-family: "JetBrains Mono", monospace; }
+
+      /* ---------- Header ---------- */
       .app-header {
-        background-color: #212529;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background-color: var(--color-dark);
         padding: 1rem 0;
-        border-bottom: 1px solid #020000;
+        border-bottom: 1px solid var(--color-wood-dark);
+        box-shadow: var(--shadow-soft);
       }
 
-      .app-header .logo {
-        height: 40px;
-        width: auto;
+      .app-header::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--color-primary-green) 0%, var(--color-wood-brown) 55%, transparent 100%);
+        opacity: 0.7;
       }
 
-      main {
-        flex: 1;
+      .app-header .logo { height: 36px; width: auto; }
+
+      .header-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-green-light);
       }
 
-      .container {
-        max-width: 1200px;
+      .header-status .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--color-primary-green);
+        box-shadow: 0 0 0 3px rgba(47, 107, 58, 0.18);
+        animation: pulse-dot 2.4s ease-in-out infinite;
       }
 
-      .app-footer {
-        background-color: var(--eucamad-dark-green);
-        color: var(--eucamad-white);
-        padding: 2rem 0;
-        margin-top: 4rem;
+      @keyframes pulse-dot {
+        0%, 100% { box-shadow: 0 0 0 3px rgba(47, 107, 58, 0.18); }
+        50% { box-shadow: 0 0 0 6px rgba(47, 107, 58, 0.1); }
       }
 
-      .app-footer a {
-        color: var(--eucamad-light-gray);
-        text-decoration: none;
+      main { flex: 1; }
+      .container { max-width: 1200px; }
+
+      /* ---------- Hero ---------- */
+      .hero {
+        position: relative;
+        padding: clamp(2.4rem, 5vw, 3.6rem) 0 clamp(1.8rem, 3vw, 2.4rem);
+        text-align: center;
       }
 
-      .app-footer a:hover {
-        text-decoration: underline;
+      .hero .eyebrow {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--color-wood-brown);
+        margin-bottom: 0.7rem;
       }
 
+      .hero .eyebrow::before,
+      .hero .eyebrow::after {
+        content: "";
+        width: 1.4rem;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--color-wood-brown));
+      }
+      .hero .eyebrow::after { background: linear-gradient(90deg, var(--color-wood-brown), transparent); }
+
+      .hero h1 {
+        position: relative;
+        font-size: clamp(1.7rem, 4vw, 2.4rem);
+        margin-bottom: 0.5rem;
+      }
+
+      .hero p.lead-sub {
+        position: relative;
+        color: var(--color-text-muted);
+        font-size: 0.98rem;
+        max-width: 46ch;
+        margin: 0 auto;
+      }
+
+      /* ---------- Cards ---------- */
       .card {
-        border: none;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        background-color: var(--color-white);
+        border: 1px solid var(--color-border);
+        border-radius: 0.6rem;
+        box-shadow: var(--shadow-soft);
+        color: var(--color-text-muted);
+        transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
       }
 
-      .form-control-lg {
-        font-family: monospace;
-        font-size: 1rem;
-        border-radius: 0.375rem;
+      .card:hover {
+        border-color: #d0d0d0;
       }
+
+      .card .card-title, .card h5, .card h6 { color: var(--color-text-main); }
+      .card-header { background: transparent; border-bottom: 1px solid var(--color-border); }
+
+      .form-label { color: var(--color-text-main); font-weight: 500; font-size: 0.88rem; }
+
+      .form-control, .form-control-lg {
+        background-color: var(--color-gray-light);
+        border: 1px solid var(--color-border);
+        color: var(--color-text-main);
+        border-radius: 0.4rem;
+        transition: border-color var(--transition), box-shadow var(--transition);
+      }
+
+      .form-control:focus {
+        background-color: var(--color-white);
+        color: var(--color-text-main);
+        border-color: var(--color-primary-green);
+        box-shadow: 0 0 0 0.2rem rgba(47, 107, 58, 0.18);
+      }
+
+      .form-control-lg { font-family: "JetBrains Mono", monospace; font-size: 1rem; letter-spacing: 0.03em; }
+      .form-control::placeholder { color: #888; }
+
+      .btn {
+        transition: background-color var(--transition), border-color var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition);
+      }
+
+
 
       .btn-primary {
-        background-color: var(--eucamad-green);
-        border-color: var(--eucamad-green);
+        background-color: var(--color-green-dark);
+        border-color: var(--color-green-dark);
         font-weight: 600;
         padding: 0.75rem 1rem;
-        border-radius: 0.375rem;
+        border-radius: 0.4rem;
+        color: var(--color-text-light);
       }
-
-      .btn-primary:hover,
-      .btn-primary:focus {
-        background-color: var(--eucamad-dark-green);
-        border-color: var(--eucamad-dark-green);
+      .btn-primary:hover, .btn-primary:focus {
+        background-color: var(--leaf);
+        border-color: var(--leaf);
+        color: var(--bark-950);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(139, 168, 92, 0.25);
       }
+      .btn-primary:active { transform: translateY(0); }
+      .btn-primary:disabled { transform: none; box-shadow: none; }
 
       .btn-secondary {
-        background-color: var(--eucamad-wood);
-        border-color: var(--eucamad-wood);
+        background-color: var(--heartwood-dark);
+        border-color: var(--color-wood-dark);
         font-weight: 600;
-        color: var(--eucamad-white);
+        color: var(--color-text-light);
+        border-radius: 0.4rem;
       }
 
-      .btn-secondary:hover,
-      .btn-secondary:focus {
-        background-color: #a9844c;
-        border-color: #a9844c;
-        color: var(--eucamad-white);
-      }
 
-      .spinner-border-sm {
-        width: 1rem;
-        height: 1rem;
-        border-width: 0.2em;
+      .btn-secondary:hover, .btn-secondary:focus {
+        background-color: var(--color-wood-brown);
+        border-color: var(--color-wood-brown);
+        color: var(--bark-950);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(192, 138, 74, 0.25);
       }
+      .btn-secondary:active { transform: translateY(0); }
+      .btn-secondary:disabled { transform: none; box-shadow: none; }
 
-      /* Card de regras */
-      .rules-card {
-        background-color: #212529;
-        color: #f8f9fa;
-      }
+      .spinner-border-sm { width: 1rem; height: 1rem; border-width: 0.2em; }
 
-      .rules-card .card-title {
-        color: #ffffff;
-        font-size: 1rem;
-        font-weight: 700;
-      }
+      /* ---------- Regras: anéis de crescimento ---------- */
+      .rules-card .card-body { padding: 1.75rem; }
 
-      .rules-card p {
-        color: #f8f9fa;
-        font-size: 0.88rem;
-        line-height: 1.6;
-      }
-
-      .rules-card strong {
-        color: #ffffff;
-      }
+      .rules-card p { font-size: 0.87rem; line-height: 1.65; }
 
       .rules-subtitle {
-        color: var(--eucamad-green);
-        font-size: 0.95rem;
-        margin-top: 1rem;
-        margin-bottom: 0.75rem;
+        color: var(--color-green-light);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-family: "JetBrains Mono", monospace;
+        margin-top: 1.6rem;
+        margin-bottom: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .rules-subtitle::after {
+        content: "";
+        flex: 1;
+        height: 1px; 
+        background: var(--color-border);
       }
 
-      .rules-list {
-        padding-left: 0;
-        list-style: none;
-        margin-bottom: 1rem;
+      .ring-list { list-style: none; padding-left: 0; margin-bottom: 0; }
+
+      .ring-item {
+        display: grid;
+        grid-template-columns: 2.5rem 1fr;
+        gap: 0.85rem;
+        padding: 0.7rem 0;
+        border-bottom: 1px solid var(--color-border);
+        font-size: 0.85rem;
+        transition: padding-left var(--transition);
+      }
+      .ring-item:last-child { border-bottom: none; }
+      .ring-item:hover { padding-left: 0.3rem; }
+
+      .ring-num {
+        font-family: "JetBrains Mono", monospace;
+        color: var(--color-wood-brown);
+        font-weight: 600;
+        font-size: 0.82rem;
+        display: flex;
+        align-items: center;
       }
 
-      .rules-list li {
-        font-size: 0.86rem;
-        margin-bottom: 0.45rem;
-        color: #f8f9fa;
-        line-height: 1.45;
-      }
-
-      .rules-list li strong {
-        color: #ffffff;
+      .ring-item strong { color: var(--color-text-main); }
+      .ring-item .cst-tag {
+        display: inline-block;
+        margin-top: 0.2rem;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--color-primary-green);
+        background: var(--success-bg);
+        border: 1px solid rgba(47, 107, 58, 0.2);
+        padding: 0.1rem 0.45rem;
+        border-radius: 0.25rem;
       }
 
       .rules-alert {
-        background-color: rgba(196, 154, 90, 0.12);
-        border-left: 3px solid var(--eucamad-wood);
-        border-radius: 0.375rem;
-        padding: 1rem;
-        margin-top: 1rem;
-      }
+        background-color: var(--danger-bg);
+        border-left: 3px solid var(--danger);
+        border-radius: 0.4rem;
+        padding: 1rem 1.1rem;
+        margin-top: 1.4rem;
+      } 
+      .rules-alert p { font-size: 0.84rem; margin-bottom: 0; color: var(--color-text-muted); }
+      .rules-alert strong { color: var(--color-text-main); }
 
-      .rules-alert p {
-        font-size: 0.85rem;
-        margin-bottom: 0;
+      .rules-footnote {
+        margin-top: 1.1rem;
+        font-size: 0.84rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--color-border);
       }
 
       @media (min-width: 992px) {
-        .rules-card {
-          position: sticky;
-          top: 1.5rem;
-        }
+        .rules-card { position: sticky; top: 1.5rem; }
       }
 
+      /* ---------- Status pipeline (signature element) ---------- */
+      .pipeline {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin: 1.4rem 0 1.6rem;
+        overflow-x: auto;
+      }
+      .pipeline .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        min-width: 4.6rem;
+      }
+      .pipeline .step .node {
+        width: 30px; height: 30px;
+        border-radius: 50%;
+        border: 2px solid var(--color-border);
+        display: flex; align-items: center; justify-content: center;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.68rem;
+        color: var(--color-text-muted);
+        background: var(--color-gray-light);
+        transition: border-color var(--transition), background-color var(--transition), color var(--transition), box-shadow var(--transition);
+      }
+      .pipeline .step .label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--parchment-dim);
+        font-family: "JetBrains Mono", monospace; 
+      }
+      .pipeline .connector {
+        flex: 1;
+        height: 2px;
+        background: var(--color-border);
+        min-width: 1.5rem;
+      }
+      .pipeline .step.done .node { border-color: var(--color-primary-green); background: var(--success-bg); color: var(--color-green-dark); box-shadow: 0 0 0 3px rgba(47,107,58,0.12); }
+      .pipeline .step.fail .node { border-color: var(--danger); background: rgba(209,104,90,0.15); color: var(--danger); box-shadow: 0 0 0 3px rgba(209,104,90,0.12); }
+      .pipeline .connector { transition: background-color var(--transition); }
+      .pipeline .connector.done { background: var(--color-primary-green); }
+
+      /* ---------- Resultado ---------- */ 
+      #status-badge.alert {
+        border-radius: 0.5rem;
+        border: 1px solid var(--ring-line);
+        border-left-width: 4px;
+        transition: background-color var(--transition), border-color var(--transition);
+      }
+
+      .list-group-item {
+        background-color: var(--color-gray-light);
+        border-color: var(--color-border);
+        color: var(--color-text-muted);
+        transition: background-color var(--transition), border-color var(--transition), transform var(--transition);
+      }
+      .list-group-item h6 { color: var(--color-text-main); }
+      .list-group-item-action:hover {
+        background-color: #e9e9e9;
+        color: var(--color-text-main);
+        transform: translateX(2px);
+      }
+      .list-group-item-action:focus-visible {
+        outline: 2px solid var(--leaf);
+        outline-offset: -2px;
+      }
+
+      .badge.rounded-pill { font-family: "JetBrains Mono", monospace; font-weight: 600; letter-spacing: 0.02em; }
+
+      /* ---------- Footer ---------- */
+      .app-footer {
+        position: relative;
+        background-color: var(--color-dark);
+        color: var(--color-text-light);
+        padding: 1.8rem 0;
+        margin-top: 4rem;
+        border-top: 1px solid var(--color-wood-dark);
+      }
+      .app-footer::before {
+        content: "";
+        position: absolute;
+        top: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--color-wood-brown) 40%, var(--color-primary-green) 60%, transparent);
+        opacity: 0.6;
+      }
+      .app-footer p { font-size: 0.86rem; }
+      .app-footer a {
+        color: var(--color-green-light);
+        text-decoration: none;
+        transition: color var(--transition);
+      }
+      .app-footer a:hover { color: var(--color-white); text-decoration: underline; }
+
+      .modal-content {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-border);
+        color: var(--color-text-muted);
+      }
+      .modal-header, .modal-footer { border-color: var(--color-border); }
+
       @media (max-width: 991px) {
-        .container {
-          max-width: 95%;
-        }
+        .container { max-width: 95%; }
+      }
+
+      @media (max-width: 767px) {
+        .app-header .logo { height: 28px; }
+        .header-status span:not(.dot) { display: none; }
+        .rules-card .card-body { padding: 1.25rem; }
+        .ring-item { grid-template-columns: 2rem 1fr; gap: 0.6rem; }
+        .card-body.p-4 { padding: 1.25rem !important; }
+        .pipeline { justify-content: flex-start; }
+      }
+
+      @media (max-width: 420px) {
+        .hero .eyebrow::before, .hero .eyebrow::after { width: 0.8rem; }
       }
     </style>
   </head>
 
   <body>
-    <header class="app-header shadow-sm">
-      <div class="container">
+    <header class="app-header">
+      <div class="container d-flex justify-content-between align-items-center">
         <img
           src="https://eucamad.com.br/linoor/upllive/images/logo_white.png?v=50:12"
           alt="Logo Eucamad"
           class="logo"
         />
+        <div class="header-status" style="color: var(--color-text-light);">
+          <span class="dot"></span>
+          <span>Conectado ao Sankhya</span>
+        </div>
       </div>
     </header>
 
     <main>
-      <div class="container mt-5">
-        <div class="text-center mb-5">
-          <h1 class="display-6">Agente de Conferência Fiscal</h1>
-        </div>
+      <div class="hero">
+        <div class="eyebrow">TOP 1724 · Uso e Consumo</div>
+        <h1>Agente de Conferência Fiscal</h1>
+        <p class="lead-sub">Validação automática de NF-e por CFOP, CST e UF de origem.</p>
+      </div>
 
+      <div class="container mb-5">
         <div class="row g-4 align-items-start">
           <!-- Coluna esquerda - Regras -->
           <div class="col-lg-5">
             <div class="card mb-4 rules-card">
-              <div class="card-body p-4">
+              <div class="card-body">
                 <h5 class="card-title mb-3">Regras de validação</h5>
 
                 <p>
@@ -253,24 +512,50 @@
 
                 <h6 class="rules-subtitle">CFOPs e CSTs permitidos</h6>
 
-                <ul class="rules-list">
-                  <li>
-                    <strong>CFOP 1556</strong> — Operações internas — CST 90 e 51.
+                <ul class="ring-list">
+                  <li class="ring-item">
+                    <span class="ring-num">1556</span>
+                    <span>
+                      <strong>Operações internas</strong><br>
+                      <span class="cst-tag">CST 90</span> <span class="cst-tag">CST 51</span>
+                    </span>
                   </li>
-                  <li>
-                    <strong>CFOP 2556</strong> — Operações interestaduais — CST 00 e 0.
+                  <li class="ring-item">
+                    <span class="ring-num">2556</span>
+                    <span>
+                      <strong>Operações interestaduais</strong><br>
+                      <span class="cst-tag">CST 00</span> <span class="cst-tag">CST 0</span>
+                    </span>
                   </li>
-                  <li>
-                    <strong>CFOP 1407</strong> — Compra para uso ou consumo — CST 60.
+                  <li class="ring-item">
+                    <span class="ring-num">1407</span>
+                    <span>
+                      <strong>Compra para uso ou consumo</strong><br>
+                      <span class="cst-tag">CST 60</span>
+                    </span>
                   </li>
-                  <li>
-                    <strong>CFOP 2407</strong> — Compra interestadual para uso ou consumo — CST 60.
+                  <li class="ring-item">
+                    <span class="ring-num">2407</span>
+                    <span>
+                      <strong>Compra interestadual — uso/consumo</strong><br>
+                      <span class="cst-tag">CST 60</span>
+                    </span>
                   </li>
-                  <li>
-                    <strong>CFOP 1653</strong> — Operações com combustíveis — CST 00, 0, 60 e 61.
+                  <li class="ring-item">
+                    <span class="ring-num">1653</span>
+                    <span>
+                      <strong>Operações com combustíveis</strong><br>
+                      <span class="cst-tag">CST 00</span> <span class="cst-tag">CST 0</span>
+                      <span class="cst-tag">CST 60</span> <span class="cst-tag">CST 61</span>
+                    </span>
                   </li>
-                  <li>
-                    <strong>CFOP 2653</strong> — Combustíveis em operação interestadual — CST 00, 0, 60 e 61.
+                  <li class="ring-item">
+                    <span class="ring-num">2653</span>
+                    <span>
+                      <strong>Combustíveis — operação interestadual</strong><br>
+                      <span class="cst-tag">CST 00</span> <span class="cst-tag">CST 0</span>
+                      <span class="cst-tag">CST 60</span> <span class="cst-tag">CST 61</span>
+                    </span>
                   </li>
                 </ul>
 
@@ -283,7 +568,7 @@
                   </p>
                 </div>
 
-                <p class="mt-3 mb-0">
+                <p class="rules-footnote">
                   Quando a combinação entre CFOP, CST e UF de origem estiver
                   correta, a nota será aprovada para o fluxo fiscal da TOP 1724.
                 </p>
@@ -297,7 +582,11 @@
             <div class="card mb-4">
               <div class="card-body p-4">
                 <div class="mb-3">
-                  <label for="chaveNfe" class="form-label fw-semibold">
+                  <h5 class="card-title">Processo Manual</h5>
+                </div>
+
+                <div class="mb-3">
+                  <label for="chaveNfe" class="form-label">
                     Chave de Acesso da NF-e (44 dígitos)
                   </label>
 
@@ -328,21 +617,18 @@
             <!-- Card para Processamento em Lote -->
             <div class="card mb-4">
               <div class="card-body p-4">
-                <h5 class="card-title">Processamento em Lote</h5>
-                <p class="card-text text-secondary">
-                  Verifica as notas com a TOP 1724.
-                </p>
+                <h5 class="card-title">Processo Automático</h5>
 
                 <div class="row g-3 mb-3">
                   <div class="col-md-6">
-                    <label for="dataInicio" class="form-label fw-semibold">
+                    <label for="dataInicio" class="form-label">
                       Data Início
                     </label>
                     <input type="date" class="form-control" id="dataInicio" />
                   </div>
 
                   <div class="col-md-6">
-                    <label for="dataFim" class="form-label fw-semibold">
+                    <label for="dataFim" class="form-label">
                       Data Fim
                     </label>
                     <input type="date" class="form-control" id="dataFim" />
@@ -357,8 +643,8 @@
                 </small>
 
                 <div class="d-grid">
-                  <button class="btn btn-secondary btn-lg" id="btnProcessarLote">
-                    <span id="btn-lote-text">Processar Lotes Pendentes</span>
+                  <button class="btn btn-primary btn-lg" id="btnProcessarLote">
+                    <span id="btn-lote-text">Verificar Notas Automaticamente</span>
                     <span
                       id="btn-lote-spinner"
                       class="spinner-border spinner-border-sm d-none"
@@ -373,11 +659,9 @@
             <!-- Card para Detalhes das Notas do Lote -->
             <div id="area-detalhes-lote" class="d-none">
               <div class="card mb-4">
-                <div
-                  class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                   <button type="button" class="btn-close" id="btnCloseDetalhesLote" aria-label="Close"></button>
-                  <h5 class="mb-0">Detalhes do Processamento em Lote</h5>
-
+                  <h5 class="mb-0 flex-grow-1 text-center">Detalhes do Processo</h5>
 
                   <button class="btn btn-success" id="btnExportarExcel">
                     <i class="bi bi-file-earmark-excel"></i>
@@ -391,7 +675,7 @@
                   <div class="row">
                     <div class="col-md-6">
                       <h6>
-                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <i class="bi bi-check-circle-fill" style="color: var(--leaf);"></i>
                         Notas Aprovadas
                       </h6>
                       <div
@@ -402,7 +686,7 @@
 
                     <div class="col-md-6">
                       <h6>
-                        <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                        <i class="bi bi-exclamation-triangle-fill" style="color: var(--warning);"></i>
                         Notas com Divergência ou Revisão
                       </h6>
                       <div
@@ -418,11 +702,22 @@
             <!-- Área de Resultados -->
             <div id="area-resultado" class="d-none">
               <div class="card">
-                <div class="card-header bg-white">
-                  <h5 class="mb-0">Resultado da Análise</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h5 class="mb-0">Resultado da Análise Manual</h5>
+                  <button type="button" class="btn-close" id="btnCloseResultado" aria-label="Close"></button>
                 </div>
 
                 <div class="card-body p-4">
+                  <div class="pipeline" id="status-pipeline">
+                    <div class="step" data-step="cfop"><span class="node">1</span><span class="label">CFOP</span></div>
+                    <div class="connector"></div>
+                    <div class="step" data-step="cst"><span class="node">2</span><span class="label">CST</span></div>
+                    <div class="connector"></div>
+                    <div class="step" data-step="uf"><span class="node">3</span><span class="label">UF</span></div>
+                    <div class="connector"></div>
+                    <div class="step" data-step="final"><span class="node">4</span><span class="label">Resultado</span></div>
+                  </div>
+
                   <div id="status-badge" class="alert" role="alert">
                     <strong id="status-texto"></strong>
                     <p id="status-mensagem" class="mb-0"></p>
@@ -467,7 +762,7 @@
           <div class="modal-footer">
             <button
               type="button"
-              class="btn btn-secondary"
+              class="btn btn-primary"
               data-bs-dismiss="modal"
             >
               Fechar
@@ -480,11 +775,12 @@
     <footer class="app-footer">
       <div class="container text-center">
         <p class="mb-1">
-          &copy; 2024 Eucamad. Excelência em desdobramento de madeira de
+          <i class="bi bi-tree-fill" style="color: var(--leaf); font-size: 0.8rem;"></i>
+          &copy; <span id="footer-year">2026</span> Eucamad. Excelência em desdobramento de madeira de
           eucalipto no Brasil.
         </p>
 
-        <p class="small">
+        <p class="small mb-0">
           <a
             href="https://eucamad.com.br/contato/"
             target="_blank"
@@ -496,15 +792,15 @@
       </div>
     </footer>
 
-    <!-- Bootstrap JS -->
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
     ></script>
 
-    <!-- JavaScript da Aplicação -->
     <script>
+      document.getElementById("footer-year").textContent = new Date().getFullYear();
+
       const btnVerificar = document.getElementById("btnVerificar");
       const inputChave = document.getElementById("chaveNfe");
       const areaResultado = document.getElementById("area-resultado");
@@ -522,6 +818,7 @@
       const btnLoteSpinner = document.getElementById("btn-lote-spinner");
       const btnExportarExcel = document.getElementById("btnExportarExcel");
       const btnCloseDetalhesLote = document.getElementById("btnCloseDetalhesLote");
+      const btnCloseResultado = document.getElementById("btnCloseResultado");
 
       const areaDetalhesLote = document.getElementById("area-detalhes-lote");
       const loteSummary = document.getElementById("lote-summary");
@@ -530,32 +827,58 @@
 
       const statusCores = {
         APROVADO: {
-          bg: "bg-success-subtle",
-          text: "text-success-emphasis",
+          bg: "",
+          text: "", 
+          alertBg: "var(--success-bg)",
+          alertBorder: "var(--color-primary-green)",
+          pill: "background-color: var(--success-bg); color: var(--color-green-dark); border: 1px solid var(--color-primary-green);",
         },
         REVISAO_MANUAL: {
-          bg: "bg-warning-subtle",
-          text: "text-warning-emphasis",
+          alertBg: "var(--warning-bg)",
+          alertBorder: "var(--warning)",
+          pill: "background-color: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning);",
         },
         FORA_DO_ESCOPO: {
-          bg: "bg-secondary-subtle",
-          text: "text-secondary-emphasis",
+          alertBg: "rgba(107,107,107,0.1)",
+          alertBorder: "var(--color-text-muted)",
+          pill: "background-color: rgba(107,107,107,0.15); color: var(--color-text-muted); border: 1px solid var(--color-text-muted);",
         },
         DIVERGENTE: {
-          bg: "bg-danger-subtle",
-          text: "text-danger-emphasis",
+          alertBg: "var(--danger-bg)",
+          alertBorder: "var(--danger)",
+          pill: "background-color: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger);",
         },
         ERRO_TECNICO: {
-          bg: "bg-danger-subtle",
-          text: "text-danger-emphasis",
+          alertBg: "var(--danger-bg)",
+          alertBorder: "var(--danger)",
+          pill: "background-color: rgba(209,104,90,0.18); color: var(--danger); border: 1px solid var(--danger);",
         },
         ERRO_VALIDACAO: {
-          bg: "bg-danger-subtle",
-          text: "text-danger-emphasis",
+          alertBg: "var(--danger-bg)",
+          alertBorder: "var(--danger)",
+          pill: "background-color: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger);",
         },
       };
 
-      let resultadosLoteGlobais = [];
+      function getCores(status) {
+        return statusCores[status] || statusCores.ERRO_TECNICO;
+      }
+
+      function atualizarPipeline(status) {
+        const steps = document.querySelectorAll("#status-pipeline .step");
+        const connectors = document.querySelectorAll("#status-pipeline .connector");
+        steps.forEach((s) => s.classList.remove("done", "fail"));
+        connectors.forEach((c) => c.classList.remove("done"));
+
+        const aprovado = status === "APROVADO";
+        const doneCount = aprovado ? 4 : (status === "DIVERGENTE" || status === "REVISAO_MANUAL" ? 2 : 1);
+
+        steps.forEach((step, i) => {
+          if (i < doneCount) step.classList.add(aprovado || i < doneCount - 1 ? "done" : "fail");
+          if (i === doneCount - 1 && !aprovado) step.classList.add("fail");
+        });
+        connectors.forEach((c, i) => { if (i < doneCount - 1) c.classList.add("done"); });
+      }
 
       btnVerificar.addEventListener("click", async () => {
         const chave = inputChave.value.trim();
@@ -566,9 +889,14 @@
         }
 
         btnVerificar.disabled = true;
-        btnText.textContent = "Processando...";
         btnSpinner.classList.remove("d-none");
         areaResultado.classList.add("d-none");
+
+        let dotCount = 0;
+        manualDotAnimationInterval = setInterval(() => {
+          dotCount = (dotCount + 1) % 4;
+          btnText.textContent = "Processando" + ".".repeat(dotCount);
+        }, 500);
 
         try {
           const response = await fetch("/validar", {
@@ -580,24 +908,34 @@
           const data = await response.json();
 
           const status = data.status || "ERRO_TECNICO";
-          const cores = statusCores[status] || statusCores.ERRO_TECNICO;
+          const cores = getCores(status);
 
-          statusBadge.className = `alert ${cores.bg} ${cores.text}`;
+          statusBadge.setAttribute(
+            "style",
+            `background-color: ${cores.alertBg}; border: 1px solid var(--color-border); border-left: 4px solid ${cores.alertBorder}; color: var(--color-text-main);`
+          );
           statusTexto.textContent = `STATUS: ${status}`;
           statusMensagem.textContent =
             data.mensagem || "Não foi possível obter a mensagem.";
+
+          atualizarPipeline(status);
 
           detalhesProcessamento.innerHTML = gerarHtmlDetalhes(data);
 
           areaResultado.classList.remove("d-none");
         } catch (error) {
-          statusBadge.className = "alert alert-danger";
+          statusBadge.setAttribute(
+            "style",
+            "background-color: var(--danger-bg); border: 1px solid var(--danger); border-left: 4px solid var(--danger); color: var(--color-text-main);"
+          );
           statusTexto.textContent = "ERRO DE CONEXÃO";
           statusMensagem.textContent =
             "Não foi possível se comunicar com o servidor.";
+          atualizarPipeline("ERRO_TECNICO");
           detalhesProcessamento.innerHTML = `<pre>${error.toString()}</pre>`;
           areaResultado.classList.remove("d-none");
         } finally {
+          clearInterval(manualDotAnimationInterval);
           btnVerificar.disabled = false;
           btnText.textContent = "Verificar Nota no Sankhya";
           btnSpinner.classList.add("d-none");
@@ -606,7 +944,7 @@
 
       function gerarHtmlDetalhes(data) {
         if (!data || !data.dados) {
-          return `<p class="text-secondary">Não há detalhes adicionais para exibir.</p>`;
+          return `<p style="color: var(--color-text-muted);">Não há detalhes adicionais para exibir.</p>`;
         }
 
         const cabecalho = data.dados.cabecalho || {};
@@ -631,28 +969,28 @@
             <div class="list-group-item">
               <div class="d-flex w-100 justify-content-between">
                 <h6 class="mb-1">Nota Fiscal</h6>
-                <small class="text-secondary">${numNota} / ${serie}</small>
+                <small class="mono" style="color: var(--color-text-muted);">${numNota} / ${serie}</small>
               </div>
             </div>
 
             <div class="list-group-item">
               <div class="d-flex w-100 justify-content-between">
                 <h6 class="mb-1">Fornecedor</h6>
-                <small class="text-secondary">${fornecedor}</small>
+                <small style="color: var(--color-text-muted);">${fornecedor}</small>
               </div>
             </div>
 
             <div class="list-group-item">
               <div class="d-flex w-100 justify-content-between">
                 <h6 class="mb-1">Valor Total</h6>
-                <small class="text-secondary fw-bold">${valor}</small>
+                <small class="mono fw-bold" style="color: var(--color-text-main);">${valor}</small>
               </div>
             </div>
 
             <div class="list-group-item">
               <div class="d-flex w-100 justify-content-between">
                 <h6 class="mb-1">Data</h6>
-                <small class="text-secondary">${dataNeg}</small>
+                <small style="color: var(--color-text-muted);">${dataNeg}</small>
               </div>
             </div>
           </div>
@@ -674,11 +1012,11 @@
           html += `<p>${total_aprovados} de ${total_itens} itens aprovados.`;
 
           if (total_divergentes > 0) {
-            html += ` <span class="badge bg-danger">${total_divergentes} divergente(s)</span>`;
+            html += ` <span class="badge rounded-pill" style="${getCores("DIVERGENTE").pill}">${total_divergentes} divergente(s)</span>`;
           }
 
           if (total_revisao_manual > 0) {
-            html += ` <span class="badge bg-warning text-black">${total_revisao_manual} para revisão</span>`;
+            html += ` <span class="badge rounded-pill" style="${getCores("REVISAO_MANUAL").pill}">${total_revisao_manual} para revisão</span>`;
           }
 
           html += `</p>`;
@@ -695,8 +1033,7 @@
 
             allProcessedItems.forEach((item) => {
               const status = item.status || "DESCONHECIDO";
-              const cores = statusCores[status] || statusCores.FORA_DO_ESCOPO;
-              const corBadge = `${cores.bg} ${cores.text}`;
+              const pillStyle = getCores(status).pill;
 
               const descrProd = item.descrprod || "Descrição não disponível";
               const motivo =
@@ -727,14 +1064,14 @@
                 <li class="list-group-item">
                   <div class="d-flex w-100 justify-content-between">
                     <h6 class="mb-1">
-                      <span class="badge rounded-pill ${corBadge} me-2">${item.status}</span>
+                      <span class="badge rounded-pill me-2" style="${pillStyle}">${item.status}</span>
                       Item ${item.codprod} - ${descrProd}
                     </h6>
                   </div>
 
                   <p class="mb-1">${motivo}</p>
 
-                  <div class="row row-cols-2 row-cols-md-3 g-2 mt-2 small text-body-secondary">
+                  <div class="row row-cols-2 row-cols-md-3 g-2 mt-2 small mono" style="color: var(--color-text-muted);">
                     <div class="col"><strong>CFOP:</strong> ${cfop}</div>
                     <div class="col"><strong>CST ICMS:</strong> ${cstIcms}</div>
                     <div class="col"><strong>Qtd:</strong> ${qtd}</div>
@@ -754,6 +1091,8 @@
 
       const dataInicioInput = document.getElementById("dataInicio");
       const dataFimInput = document.getElementById("dataFim");
+      let loteDotAnimationInterval;
+      let manualDotAnimationInterval;
       const loteDateError = document.getElementById("lote-date-error");
 
       btnProcessarLote.addEventListener("click", async () => {
@@ -773,8 +1112,14 @@
         };
 
         btnProcessarLote.disabled = true;
-        btnLoteText.textContent = "Consultando e processando...";
         btnLoteSpinner.classList.remove("d-none");
+
+        let dotCount = 0;
+        btnLoteText.textContent = "Consultando e processando";
+        loteDotAnimationInterval = setInterval(() => {
+          dotCount = (dotCount + 1) % 4;
+          btnLoteText.textContent = "Consultando e processando" + ".".repeat(dotCount);
+        }, 500);
 
         try {
           const response = await fetch("/processar-lote", {
@@ -801,8 +1146,7 @@
             resultados.forEach((res, index) => {
               const status = res.status || "ERRO";
               const isAprovado = status === "APROVADO";
-              const cores = statusCores[status] || statusCores.ERRO_TECNICO;
-              const corBadge = `${cores.bg} ${cores.text}`;
+              const pillStyle = getCores(status).pill;
               const chave = res.dados?.chave_nfe || res.chave_original || "N/A";
               const mensagem = res.mensagem || "Sem detalhes.";
 
@@ -814,13 +1158,13 @@
                 >
                   <div class="d-flex w-100 justify-content-between">
                     <h6 class="mb-1">
-                      <span class="badge rounded-pill ${corBadge} me-2">${status}</span>
+                      <span class="badge rounded-pill me-2" style="${pillStyle}">${status}</span>
                     </h6>
                     <i class="bi bi-box-arrow-up-right small"></i>
                   </div>
 
                   <p class="mb-1 small">${mensagem}</p>
-                  <small class="text-body-secondary text-monospace">${chave}</small>
+                  <small class="mono" style="color: var(--color-text-muted);">${chave}</small>
                 </button>
               `;
 
@@ -844,14 +1188,14 @@
               resultados.mensagem || "Nenhuma nota encontrada para o período.";
 
             loteSummary.innerHTML = `
-              <div class="alert alert-secondary">${mensagem}</div>
+              <div class="alert" style="background-color: var(--color-gray-light); border: 1px solid var(--color-border); color: var(--color-text-muted);">${mensagem}</div>
             `;
           }
 
           areaDetalhesLote.classList.remove("d-none");
         } catch (error) {
-          loteSummary.innerHTML = `
-            <div class="alert alert-danger">
+          loteSummary.innerHTML = ` 
+            <div class="alert" style="background-color: var(--danger-bg); border: 1px solid var(--danger); color: var(--parchment);">
               <strong>Erro de Conexão</strong>
               <p>Não foi possível se comunicar com o servidor para processar o lote.</p>
               <pre>${error.toString()}</pre>
@@ -860,14 +1204,21 @@
 
           areaDetalhesLote.classList.remove("d-none");
         } finally {
+          clearInterval(loteDotAnimationInterval);
           btnProcessarLote.disabled = false;
-          btnLoteText.textContent = "Processar Lotes Pendentes";
+          btnLoteText.textContent = "Verificar Notas Automaticamente";
           btnLoteSpinner.classList.add("d-none");
         }
       });
 
+      let resultadosLoteGlobais = [];
+
       btnCloseDetalhesLote.addEventListener("click", () => {
         areaDetalhesLote.classList.add("d-none");
+      });
+
+      btnCloseResultado.addEventListener("click", () => {
+        areaResultado.classList.add("d-none");
       });
 
       function mostrarDetalhesLote(index) {
