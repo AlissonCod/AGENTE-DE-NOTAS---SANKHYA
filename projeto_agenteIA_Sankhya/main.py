@@ -347,6 +347,7 @@ def buscar_itens_plano_a(
             result_fields=[
                 "NUNOTA",
                 "SEQUENCIA",
+                "DTNEG", #add por Alisson 08/07
                 "CODPROD",
                 "DESCRPROD",
                 "CODCFO",      # Alias para CFOP
@@ -467,6 +468,7 @@ def buscar_itens_plano_b(
         sql = f"""
             SELECT
                 ITE.NUNOTA,
+                CAB.DTNEG,
                 ITE.SEQUENCIA,
                 ITE.CODPROD,
                 PRO.DESCRPROD,
@@ -477,6 +479,7 @@ def buscar_itens_plano_b(
                 ITE.VLRTOT
             FROM TGFITE ITE
             LEFT JOIN TGFPRO PRO ON PRO.CODPROD = ITE.CODPROD
+            LEFT JOIN TGFCAB CAB ON ITE.NUNOTA = CAB.NUNOTA
             WHERE ITE.NUNOTA = {nunota_segura}
             ORDER BY ITE.SEQUENCIA
         """

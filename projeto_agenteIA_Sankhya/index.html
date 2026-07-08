@@ -951,8 +951,10 @@
         const validacaoIcms = data.dados.validacao_icms;
 
         const numNota = cabecalho.NUMNOTA || "N/A";
+        const nunota = cabecalho.NUNOTA || "N/A"; // ADD POR ALISSON 08/07
         const serie = cabecalho.SERIENOTA || "N/A";
         const fornecedor = cabecalho.NOMEPARC || "N/A";
+        const chave = cabecalho.CHAVENFE || "N/A"; // ADD POR ALISSON 08/07
 
         const valor = cabecalho.VLRNOTA
           ? `R$ ${parseFloat(cabecalho.VLRNOTA).toLocaleString("pt-BR", {
@@ -960,22 +962,73 @@
             })}`
           : "N/A";
 
+        // Busca DTNEG ignorando diferença de maiúsculas/minúsculas, caso o
+        // backend retorne a chave com outra caixa dependendo do Plano A/B.
+        const dtnegKey = Object.keys(cabecalho).find(
+          (k) => k.toUpperCase() === "DTNEG"
+        );
+        const dtnegRaw = dtnegKey ? cabecalho[dtnegKey] : null;
+
         let dataNeg = "N/A";
-        if (cabecalho.DTNEG) {
-          // A data do Sankhya vem como "DD/MM/YYYY HH:mm:ss.S"
-          // Precisamos converter para "YYYY-MM-DDTHH:mm:ss" para o construtor Date
-          const partes = cabecalho.DTNEG.split(" ")[0].split("/");
-          if (partes.length === 3) {
-            dataNeg = new Date(`${partes[2]}-${partes[1]}-${partes[0]}`).toLocaleDateString("pt-BR", { timeZone: 'UTC' });
+        if (dtnegRaw !== null && dtnegRaw !== undefined && dtnegRaw !== "") {
+          const valorStr = String(dtnegRaw).trim();
+          const somenteData = valorStr.split(" ")[0].split("T")[0];
+          let dataObj = null;
+
+          if (somenteData.includes("/")) {
+            // Formato brasileiro: DD/MM/YYYY
+            const partes = somenteData.split("/");
+            if (partes.length === 3) {
+              dataObj = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T00:00:00`);
+            }
+          } else if (somenteData.includes("-")) {
+            // Formato ISO: YYYY-MM-DD
+            const partes = somenteData.split("-");
+            if (partes.length === 3 && partes[0].length === 4) {
+              dataObj = new Date(`${somenteData}T00:00:00`);
+            }
+          } else if (/^\d{8}$/.test(somenteData)) {
+            // Formato Sankhya sem separador: DDMMYYYY
+            const dia = somenteData.slice(0, 2);
+            const mes = somenteData.slice(2, 4);
+            const ano = somenteData.slice(4, 8);
+            dataObj = new Date(`${ano}-${mes}-${dia}T00:00:00`);
+          } else if (!isNaN(Number(somenteData))) {
+            // Timestamp em milissegundos
+            dataObj = new Date(Number(somenteData));
           }
+
+          if (dataObj && !isNaN(dataObj.getTime())) {
+            dataNeg = dataObj.toLocaleDateString("pt-BR", { timeZone: "UTC" });
+          } else {
+            console.warn("Não foi possível interpretar a data DTNEG recebida do Sankhya:", dtnegRaw);
+          }
+        } else {
+          console.warn("Campo DTNEG ausente no cabeçalho retornado pelo backend:", cabecalho);
         }
 
         let html = `
           <div class="list-group">
             <div class="list-group-item">
               <div class="d-flex w-100 justify-content-between">
-                <h6 class="mb-1">Nota Fiscal</h6>
+                <h6 class="mb-1">Nota Fiscal/Serie</h6>
                 <small class="mono" style="color: var(--color-text-muted);">${numNota} / ${serie}</small>
+              </div>
+            </div>
+
+            <div class="list-group">
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">Número único</h6>
+                <small class="mono" style="color: var(--color-text-muted);">${nunota}</small>
+              </div>
+            </div>
+
+            <div class="list-group">
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">Chave da Nota</h6>
+                <small class="mono" style="color: var(--color-text-muted);">${chave}</small>
               </div>
             </div>
 
