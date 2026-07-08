@@ -421,6 +421,7 @@ def buscar_cabecalho_plano_b(
                 CAB.NUMNOTA,
                 CAB.SERIENOTA,
                 CAB.DTNEG,
+                CAB.CHAVENFE,
                 CAB.CODPARC,
                 PAR.NOMEPARC,
                 CAB.VLRNOTA

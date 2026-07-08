@@ -218,7 +218,7 @@ def exportar_lote():
                     "Nro. Nota": cabecalho.get("NUMNOTA", "N/A"),
                     "Série": cabecalho.get("SERIENOTA", "N/A"),
                     "Valor Total": cabecalho.get("VLRNOTA", 0),
-                    "Data Emissão": cabecalho.get("DTNEG", "N/A"),
+                    "Data Emissão": cabecalho.get("DTNEG", "N/A"), # Corrigido para usar DTNEG
                     "Nro. Único (Sankhya)": dados_nota.get("nunota", "N/A"),
                 }
                 dados_para_exportar.append(linha)
