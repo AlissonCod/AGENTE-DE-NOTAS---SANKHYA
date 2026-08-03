@@ -1,31 +1,35 @@
 from typing import Dict, Any
 
+# Fonte única de verdade: CFOP -> CSTs de ICMS permitidos para o fluxo de
+# Uso e Consumo (TOP 1724). Além da validação abaixo, é reaproveitada pelo
+# endpoint /regras-icms para montar os dropdowns de correção no front-end.
+TABELA_DECISAO_CFOP_CST = {
+    "1556": ["90", "51"], # Operações Internas
+    "2556": ["00", "0", "90"],  # Operações Interestaduais
+    "1407": ["60"],  # compra de mercadorias destinadas a uso ou consumo
+    "2407": ["60", "10"],  # compra de mercadorias destinadas a uso ou consumo
+    "1653": ["00","0","60", "61"], #Combustiveis
+    "2653": ["00","0","60", "61"] #Combustiveis INTERESTADUAL
+}
+
+
 def validar_regras_icms_uso_consumo(cst: str, cfop: str, uf_origem: str) -> Dict[str, Any]:
     """
     Aplica regras de negócio para a conferência fiscal de NF-es de Entrada (Uso e Consumo - TOP 1724).
-    
+
     :param cst: Código de Situação Tributária (ex: '00', '40', '90')
     :param cfop: Código Fiscal de Operações e Prestações (ex: '1556', '2556')
     :param uf_origem: Sigla da Unidade Federativa da empresa emitente (ex: 'SP')
     :return: Status de conformidade fiscal da linha e o motivo detalhado.
     """
-    
-    tabela_decisao = {
-        "1556": ["90", "51"], # Operações Internas
-        "2556": ["00", "0", "90"],  # Operações Interestaduais
-        "1407": ["60"],  # compra de mercadorias destinadas a uso ou consumo
-        "2407": ["60", "10"],  # compra de mercadorias destinadas a uso ou consumo
-        "1653": ["00","0","60", "61"], #Combustiveis 
-        "2653": ["00","0","60", "61"] #Combustiveis INTERESTADUAL
-    }
-    
-    if cfop not in tabela_decisao:
+
+    if cfop not in TABELA_DECISAO_CFOP_CST:
         return {
             "status": "REPROVADO",
             "motivo": f"CFOP '{cfop}' não autorizado para o fluxo de Uso e Consumo nesta operação."
         }
-        
-    csts_permitidos = tabela_decisao[cfop]
+
+    csts_permitidos = TABELA_DECISAO_CFOP_CST[cfop]
     if cst not in csts_permitidos:
         return {
             "status": "REPROVADO",

@@ -166,6 +166,51 @@ class SankhyaClient:
             timeout=90,
         )
 
+    def save_record(
+        self,
+        entity_name: str,
+        pk_fields: Dict[str, Any],
+        fields_to_update: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Atualiza um registro existente no Sankhya via CRUDServiceProvider.saveRecord.
+
+        O bloco "key" com os valores atuais de pk_fields é obrigatório para o
+        Sankhya tratar a chamada como UPDATE de um registro existente; sem
+        ele, o serviço tenta inserir um registro novo e falha ao validar a
+        chave primária (erro "Elemento de um EntityPrimaryKey não pode ser nulo").
+        """
+        service_name = "CRUDServiceProvider.saveRecord"
+
+        local_fields = {**pk_fields, **fields_to_update}
+
+        payload = {
+            "serviceName": service_name,
+            "requestBody": {
+                "dataSet": {
+                    "rootEntity": entity_name,
+                    "includePresentationFields": "N",
+                    "dataRow": {
+                        "localFields": {
+                            campo: {"$": valor} for campo, valor in local_fields.items()
+                        },
+                        "key": {
+                            campo: {"$": valor} for campo, valor in pk_fields.items()
+                        },
+                    },
+                    "entity": {
+                        "fieldset": {"list": ",".join(local_fields.keys())}
+                    },
+                }
+            },
+        }
+
+        return self._post_service(
+            service_name=service_name,
+            payload=payload,
+            timeout=90,
+        )
+
     def execute_sql(self, sql: str) -> Dict[str, Any]:
         """
         Executa uma consulta SQL direta no banco de dados via DbExplorerSP.

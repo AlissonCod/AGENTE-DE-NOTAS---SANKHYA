@@ -6,7 +6,14 @@ import pandas as pd
 import io
 
 # Importa as funções de negócio do script principal
-from main import autenticar_sankhya, limpar_chave_nfe, processar_nfe, normalizar_linhas_sankhya
+from main import (
+    autenticar_sankhya,
+    limpar_chave_nfe,
+    processar_nfe,
+    normalizar_linhas_sankhya,
+    corrigir_item_nfe,
+)
+from src.rules.icms import TABELA_DECISAO_CFOP_CST
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +104,53 @@ def validar_nfe():
         return jsonify({"status": "ERRO_TECNICO", "mensagem": f"Erro inesperado no servidor: {e}"}), 500
 
 
+@app.route("/regras-icms", methods=["GET"])
+def regras_icms():
+    """Expõe a tabela de CFOP -> CSTs permitidos, usada pelo front-end para
+    montar os dropdowns de correção sem duplicar a regra de negócio."""
+    return jsonify(TABELA_DECISAO_CFOP_CST)
+
+
+@app.route("/corrigir-item", methods=["POST"])
+def corrigir_item():
+    """Recebe uma correção de CFOP/CST de um item da NF-e feita no front-end,
+    revalida contra as regras fiscais e, se aprovada, grava o UPDATE no Sankhya."""
+    dados = request.get_json(silent=True) or {}
+
+    campos_obrigatorios = [
+        "nunota", "sequencia", "cfop_novo", "cst_novo", "responsavel",
+    ]
+    faltando = [campo for campo in campos_obrigatorios if not dados.get(campo)]
+
+    if faltando:
+        return jsonify({
+            "erro": f"Campo(s) obrigatório(s) ausente(s): {', '.join(faltando)}."
+        }), 400
+
+    if not sankhya_client:
+        return jsonify({"erro": "Erro crítico: Cliente Sankhya não está autenticado."}), 503
+
+    try:
+        resultado = corrigir_item_nfe(
+            client=sankhya_client,
+            chave_nfe=dados.get("chave_nfe", ""),
+            nunota=dados["nunota"],
+            sequencia=dados["sequencia"],
+            cfop_atual=dados.get("cfop_atual", ""),
+            cst_atual=dados.get("cst_atual", ""),
+            cfop_novo=dados["cfop_novo"],
+            cst_novo=dados["cst_novo"],
+            uf_origem=dados.get("uf_origem", ""),
+            responsavel=dados["responsavel"],
+        )
+        return jsonify(resultado)
+    except ValueError as e:
+        return jsonify({"status": "ERRO_VALIDACAO", "mensagem": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Erro inesperado ao corrigir item: {e}", exc_info=True)
+        return jsonify({"status": "ERRO_TECNICO", "mensagem": f"Erro inesperado no servidor: {e}"}), 500
+
+
 def buscar_chaves_pendentes_no_banco(data_inicio: str, data_fim: str):
     """
     Busca no banco de dados as chaves de NF-e pendentes de processamento dentro de um período.
@@ -120,7 +174,7 @@ def buscar_chaves_pendentes_no_banco(data_inicio: str, data_fim: str):
             INNER JOIN TGFITE ITE ON ITE.NUNOTA = CAB.NUNOTA
             WHERE CAB.DTNEG BETWEEN TO_DATE('{data_inicio}', 'DD/MM/YYYY') AND TO_DATE('{data_fim}', 'DD/MM/YYYY')
                 AND CAB.CODEMP NOT IN (52, 53, 54, 55)
-                AND CAB.CODTIPOPER NOT IN (206)
+                AND CAB.CODTIPOPER NOT IN (206) --- só pra garantir
                 AND CAB.CODTIPOPER = 1724
         """
 

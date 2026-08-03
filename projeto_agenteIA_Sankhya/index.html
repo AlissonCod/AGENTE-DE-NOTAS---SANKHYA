@@ -826,6 +826,161 @@
       const loteAprovadas = document.getElementById("lote-aprovadas");
       const loteDivergentes = document.getElementById("lote-divergentes");
 
+      // ---------- Correção de itens divergentes (UPDATE no Sankhya) ----------
+      let regrasCfopCst = {};
+
+      async function carregarRegrasIcms() {
+        try {
+          const resposta = await fetch("/regras-icms");
+          regrasCfopCst = await resposta.json();
+        } catch (error) {
+          console.error("Não foi possível carregar as regras de CFOP/CST:", error);
+        }
+      }
+      carregarRegrasIcms();
+
+      function obterResponsavel() {
+        let responsavel = sessionStorage.getItem("eucaverify_responsavel");
+        if (!responsavel) {
+          responsavel = window.prompt(
+            "Informe seu nome para registrar quem está corrigindo esta nota:",
+            ""
+          );
+          if (responsavel && responsavel.trim()) {
+            responsavel = responsavel.trim();
+            sessionStorage.setItem("eucaverify_responsavel", responsavel);
+          }
+        }
+        return responsavel ? responsavel.trim() : "";
+      }
+
+      function montarBlocoCorrecao(item) {
+        const cfopAtual = item.cfop || "";
+        const cstAtual = item.cst_icms || "";
+        const cfops = Object.keys(regrasCfopCst);
+
+        if (cfops.length === 0) {
+          return "";
+        }
+
+        const cfopOptions = cfops
+          .map(
+            (cfop) =>
+              `<option value="${cfop}" ${cfop === cfopAtual ? "selected" : ""}>${cfop}</option>`
+          )
+          .join("");
+
+        const cstsDoCfop = regrasCfopCst[cfopAtual] || regrasCfopCst[cfops[0]] || [];
+        const cstOptions = cstsDoCfop
+          .map(
+            (cst) =>
+              `<option value="${cst}" ${cst === cstAtual ? "selected" : ""}>${cst}</option>`
+          )
+          .join("");
+
+        return `
+          <div class="correcao-item mt-2 p-2" style="background: var(--color-gray-light); border-radius: 0.4rem;"
+               data-chave="${item.chave_nfe || ""}"
+               data-nunota="${item.nunota || ""}"
+               data-sequencia="${item.sequencia || ""}"
+               data-cfop-atual="${cfopAtual}"
+               data-cst-atual="${cstAtual}"
+               data-uf-origem="${item.uf_origem || ""}">
+            <div class="row g-2 align-items-end">
+              <div class="col-5">
+                <label class="form-label small mb-1">CFOP correto</label>
+                <select class="form-control form-control-sm select-cfop">${cfopOptions}</select>
+              </div>
+              <div class="col-5">
+                <label class="form-label small mb-1">CST correto</label>
+                <select class="form-control form-control-sm select-cst">${cstOptions}</select>
+              </div>
+              <div class="col-2">
+                <button type="button" class="btn btn-primary btn-sm w-100 btn-corrigir-item">Salvar</button>
+              </div>
+            </div>
+            <small class="correcao-status d-block mt-1"></small>
+          </div>
+        `;
+      }
+
+      document.addEventListener("change", (event) => {
+        const selectCfop = event.target.closest(".select-cfop");
+        if (!selectCfop) return;
+
+        const container = selectCfop.closest(".correcao-item");
+        const csts = regrasCfopCst[selectCfop.value] || [];
+        const selectCst = container.querySelector(".select-cst");
+
+        selectCst.innerHTML = csts
+          .map((cst) => `<option value="${cst}">${cst}</option>`)
+          .join("");
+      });
+
+      document.addEventListener("click", async (event) => {
+        const botao = event.target.closest(".btn-corrigir-item");
+        if (!botao) return;
+
+        const container = botao.closest(".correcao-item");
+        const statusEl = container.querySelector(".correcao-status");
+        const cfopNovo = container.querySelector(".select-cfop").value;
+        const cstNovo = container.querySelector(".select-cst").value;
+
+        const responsavel = obterResponsavel();
+        if (!responsavel) {
+          statusEl.textContent = "Informe o nome do responsável para salvar a correção.";
+          statusEl.style.color = "var(--danger)";
+          return;
+        }
+
+        botao.disabled = true;
+        statusEl.textContent = "Salvando...";
+        statusEl.style.color = "var(--color-text-muted)";
+
+        try {
+          const response = await fetch("/corrigir-item", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chave_nfe: container.dataset.chave,
+              nunota: container.dataset.nunota,
+              sequencia: container.dataset.sequencia,
+              cfop_atual: container.dataset.cfopAtual,
+              cst_atual: container.dataset.cstAtual,
+              cfop_novo: cfopNovo,
+              cst_novo: cstNovo,
+              uf_origem: container.dataset.ufOrigem,
+              responsavel: responsavel,
+            }),
+          });
+
+          const resultado = await response.json();
+
+          if (resultado.status === "APROVADO") {
+            statusEl.textContent = "Corrigido com sucesso no Sankhya.";
+            statusEl.style.color = "var(--color-primary-green)";
+            container.querySelectorAll("select").forEach((s) => (s.disabled = true));
+
+            const badge = container.closest("li")?.querySelector(".badge");
+            if (badge) {
+              badge.textContent = "APROVADO";
+              badge.setAttribute("style", getCores("APROVADO").pill);
+            }
+
+            botao.remove();
+          } else {
+            statusEl.textContent =
+              resultado.mensagem || resultado.erro || "Não foi possível aplicar a correção.";
+            statusEl.style.color = "var(--danger)";
+            botao.disabled = false;
+          }
+        } catch (error) {
+          statusEl.textContent = "Erro de conexão ao salvar a correção.";
+          statusEl.style.color = "var(--danger)";
+          botao.disabled = false;
+        }
+      });
+
       const statusCores = {
         APROVADO: {
           bg: "",
@@ -1119,6 +1274,7 @@
 
               const cfop = item.cfop || "N/A";
               const cstIcms = item.cst_icms || "N/A";
+              const podeCorrigir = status === "DIVERGENTE" || status === "REVISAO_MANUAL";
 
               html += `
                 <li class="list-group-item">
@@ -1138,6 +1294,8 @@
                     <div class="col"><strong>Vlr. Unit.:</strong> ${vlrUnit}</div>
                     <div class="col"><strong>Vlr. Total:</strong> ${vlrTotal}</div>
                   </div>
+
+                  ${podeCorrigir ? montarBlocoCorrecao(item) : ""}
                 </li>
               `;
             });

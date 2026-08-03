@@ -1,16 +1,21 @@
 import argparse
 import json
 import logging
+import os
 import re
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from src.client import SankhyaClient
-from src.rules.icms import validar_regras_icms_uso_consumo
-from src.rules.icms import validar_regras_icms_uso_consumo
+from src.rules.icms import validar_regras_icms_uso_consumo, TABELA_DECISAO_CFOP_CST
 # ---------------------------------------------------------
 # CONFIGURAÇÕES GERAIS
 # ---------------------------------------------------------
 TOP_ESPERADA = "1724"
+
+CAMINHO_LOG_AUDITORIA = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "logs", "correcoes_auditoria.jsonl"
+)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -746,6 +751,162 @@ def processar_nfe(client: SankhyaClient, chave_nfe: str) -> Dict[str, Any]:
             "validacao_top": validacao_top,
             "validacao_icms": validacao_icms,
         },
+    )
+
+
+# ---------------------------------------------------------
+# CORREÇÃO MANUAL DE ITENS (UPDATE NO SANKHYA)
+# ---------------------------------------------------------
+def registrar_auditoria_correcao(
+    *,
+    chave_nfe: str,
+    nunota: int,
+    sequencia: int,
+    cfop_atual: str,
+    cst_atual: str,
+    cfop_novo: str,
+    cst_novo: str,
+    responsavel: str,
+    resultado: str,
+    mensagem: str,
+) -> None:
+    """Registra em um arquivo JSONL local cada tentativa de correção de item.
+
+    Mantido fora do banco do Sankhya de propósito: não requer criar tabela
+    nova no ERP e continua legível mesmo sem acesso ao Sankhya.
+    """
+    try:
+        os.makedirs(os.path.dirname(CAMINHO_LOG_AUDITORIA), exist_ok=True)
+
+        linha = {
+            "timestamp": datetime.now().isoformat(timespec="seconds"),
+            "responsavel": responsavel,
+            "chave_nfe": chave_nfe,
+            "nunota": nunota,
+            "sequencia": sequencia,
+            "cfop_atual": cfop_atual,
+            "cst_atual": cst_atual,
+            "cfop_novo": cfop_novo,
+            "cst_novo": cst_novo,
+            "resultado": resultado,
+            "mensagem": mensagem,
+        }
+
+        with open(CAMINHO_LOG_AUDITORIA, "a", encoding="utf-8") as arquivo:
+            arquivo.write(json.dumps(linha, ensure_ascii=False) + "\n")
+
+    except Exception as e:
+        logger.error("Falha ao registrar auditoria de correção: %s", e)
+
+
+def corrigir_item_nfe(
+    client: SankhyaClient,
+    chave_nfe: str,
+    nunota: Any,
+    sequencia: Any,
+    cfop_atual: str,
+    cst_atual: str,
+    cfop_novo: str,
+    cst_novo: str,
+    uf_origem: str,
+    responsavel: str,
+) -> Dict[str, Any]:
+    """Revalida a nova combinação de CFOP/CST e, se aprovada, grava a
+    correção no item da NF-e no Sankhya via CRUDServiceProvider.saveRecord.
+
+    O backend nunca confia apenas no que o front-end enviou: a mesma regra
+    usada para reprovar o item originalmente é reaplicada aqui antes de
+    qualquer gravação.
+    """
+    nunota_seguro = limpar_numero(nunota, "NUNOTA")
+    sequencia_segura = limpar_numero(sequencia, "SEQUENCIA")
+    cfop_novo = str(cfop_novo or "").strip()
+    cst_novo = str(cst_novo or "").strip()
+    uf_origem = str(uf_origem or "").strip()
+
+    retorno_regra = validar_regras_icms_uso_consumo(
+        cst=cst_novo, cfop=cfop_novo, uf_origem=uf_origem
+    )
+
+    dados_base = {
+        "chave_nfe": chave_nfe,
+        "nunota": nunota_seguro,
+        "sequencia": sequencia_segura,
+        "cfop_novo": cfop_novo,
+        "cst_novo": cst_novo,
+    }
+
+    if str(retorno_regra.get("status", "")).upper() != "APROVADO":
+        mensagem = retorno_regra.get("motivo", "Combinação de CFOP/CST inválida.")
+
+        registrar_auditoria_correcao(
+            chave_nfe=chave_nfe,
+            nunota=nunota_seguro,
+            sequencia=sequencia_segura,
+            cfop_atual=cfop_atual,
+            cst_atual=cst_atual,
+            cfop_novo=cfop_novo,
+            cst_novo=cst_novo,
+            responsavel=responsavel,
+            resultado="REPROVADO",
+            mensagem=mensagem,
+        )
+
+        return resultado_padrao(
+            status="REPROVADO",
+            mensagem=f"Correção não aplicada: {mensagem}",
+            dados=dados_base,
+        )
+
+    try:
+        client.save_record(
+            entity_name="ItemNota",
+            pk_fields={"NUNOTA": nunota_seguro, "SEQUENCIA": sequencia_segura},
+            fields_to_update={"CODCFO": cfop_novo, "CODTRIB": cst_novo},
+        )
+
+    except Exception as e:
+        logger.error(
+            "Falha ao gravar correção no Sankhya (NUNOTA=%s, SEQUENCIA=%s): %s",
+            nunota_seguro, sequencia_segura, e,
+        )
+
+        registrar_auditoria_correcao(
+            chave_nfe=chave_nfe,
+            nunota=nunota_seguro,
+            sequencia=sequencia_segura,
+            cfop_atual=cfop_atual,
+            cst_atual=cst_atual,
+            cfop_novo=cfop_novo,
+            cst_novo=cst_novo,
+            responsavel=responsavel,
+            resultado="ERRO_TECNICO",
+            mensagem=str(e),
+        )
+
+        return resultado_padrao(
+            status="ERRO_TECNICO",
+            mensagem=f"Falha ao gravar a correção no Sankhya: {e}",
+            dados=dados_base,
+        )
+
+    registrar_auditoria_correcao(
+        chave_nfe=chave_nfe,
+        nunota=nunota_seguro,
+        sequencia=sequencia_segura,
+        cfop_atual=cfop_atual,
+        cst_atual=cst_atual,
+        cfop_novo=cfop_novo,
+        cst_novo=cst_novo,
+        responsavel=responsavel,
+        resultado="SUCESSO",
+        mensagem="Correção aplicada com sucesso.",
+    )
+
+    return resultado_padrao(
+        status="APROVADO",
+        mensagem="Item corrigido e atualizado no Sankhya com sucesso.",
+        dados=dados_base,
     )
 
 
