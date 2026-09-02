@@ -7,7 +7,7 @@ TABELA_DECISAO_CFOP_CST = {
     "1556": ["90", "51"], # Operações Internas
     "2556": ["00", "0", "90"],  # Operações Interestaduais
     "1407": ["60"],  # compra de mercadorias destinadas a uso ou consumo
-    "2407": ["60", "10"],  # compra de mercadorias destinadas a uso ou consumo
+    "2407": ["60", "10", "20"],  # compra de mercadorias destinadas a uso ou consumo
     "1653": ["00","0","60", "61"], #Combustiveis
     "2653": ["00","0","60", "61"] #Combustiveis INTERESTADUAL
 }
