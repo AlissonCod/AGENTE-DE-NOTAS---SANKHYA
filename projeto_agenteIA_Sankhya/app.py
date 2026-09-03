@@ -7,6 +7,7 @@ import io
 
 # Importa as funções de negócio do script principal
 from main import (
+    TOPS_ESPERADAS,
     autenticar_sankhya,
     limpar_chave_nfe,
     processar_nfe,
@@ -162,6 +163,11 @@ def buscar_chaves_pendentes_no_banco(data_inicio: str, data_fim: str):
         return []
 
     try:
+        # As TOPs vêm da constante de main.py (valores internos, não entrada do
+        # usuário), então a interpolação aqui é segura. Basta incluir uma nova
+        # TOP em TOPS_ESPERADAS para que o lote passe a varrê-la também.
+        tops_no_escopo = ", ".join(TOPS_ESPERADAS)
+
         # Query fornecida para buscar notas pendentes, agora com datas dinâmicas.
         sql = f"""
             SELECT DISTINCT
@@ -175,7 +181,7 @@ def buscar_chaves_pendentes_no_banco(data_inicio: str, data_fim: str):
             WHERE CAB.DTNEG BETWEEN TO_DATE('{data_inicio}', 'DD/MM/YYYY') AND TO_DATE('{data_fim}', 'DD/MM/YYYY')
                 AND CAB.CODEMP NOT IN (52, 53, 54, 55)
                 AND CAB.CODTIPOPER NOT IN (206) --- só pra garantir
-                AND CAB.CODTIPOPER = 1724
+                AND CAB.CODTIPOPER IN ({tops_no_escopo})
         """
 
         resposta = sankhya_client.execute_sql(sql=sql)

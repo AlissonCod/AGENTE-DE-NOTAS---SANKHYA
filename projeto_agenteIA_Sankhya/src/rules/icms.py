@@ -1,7 +1,9 @@
 from typing import Dict, Any
 
 # Fonte única de verdade: CFOP -> CSTs de ICMS permitidos para o fluxo de
-# Uso e Consumo (TOP 1724). Além da validação abaixo, é reaproveitada pelo
+# Uso e Consumo. Vale para todas as TOPs conferidas pelo agente (ver
+# TOPS_ESPERADAS em main.py) — hoje 1724 e 201, que compartilham exatamente as
+# mesmas regras. Além da validação abaixo, esta tabela é reaproveitada pelo
 # endpoint /regras-icms para montar os dropdowns de correção no front-end.
 TABELA_DECISAO_CFOP_CST = {
     "1556": ["90", "51"], # Operações Internas
@@ -15,7 +17,8 @@ TABELA_DECISAO_CFOP_CST = {
 
 def validar_regras_icms_uso_consumo(cst: str, cfop: str, uf_origem: str) -> Dict[str, Any]:
     """
-    Aplica regras de negócio para a conferência fiscal de NF-es de Entrada (Uso e Consumo - TOP 1724).
+    Aplica regras de negócio para a conferência fiscal de NF-es de Entrada do
+    fluxo de Uso e Consumo (TOPs 1724 e 201).
 
     :param cst: Código de Situação Tributária (ex: '00', '40', '90')
     :param cfop: Código Fiscal de Operações e Prestações (ex: '1556', '2556')
@@ -44,5 +47,5 @@ def validar_regras_icms_uso_consumo(cst: str, cfop: str, uf_origem: str) -> Dict
         
     return {
         "status": "APROVADO",
-        "motivo": "Combinação de CFOP, CST e UF válida para as diretrizes fiscais da TOP 1724."
+        "motivo": "Combinação de CFOP, CST e UF válida para as diretrizes fiscais de Uso e Consumo."
     }

@@ -11,7 +11,20 @@ from src.rules.icms import validar_regras_icms_uso_consumo, TABELA_DECISAO_CFOP_
 # ---------------------------------------------------------
 # CONFIGURAÇÕES GERAIS
 # ---------------------------------------------------------
-TOP_ESPERADA = "1724"
+# TOPs (Tipos de Operação) dentro do escopo de conferência do agente.
+# Todas seguem exatamente as mesmas regras de ICMS de Uso e Consumo definidas
+# em src/rules/icms.py — o que muda entre elas é apenas o CODTIPOPER da nota.
+# Fonte única de verdade: a query do processamento em lote (app.py) e as
+# mensagens exibidas ao usuário são montadas a partir daqui.
+TOPS_ESPERADAS = {
+    "1724": "Compra - Uso/Consumo",
+    "201": "Compra - Uso/Consumo - Sem crédito",
+}
+
+
+def listar_tops_esperadas() -> str:
+    """Formata as TOPs do escopo para uso em mensagens ao usuário."""
+    return ", ".join(TOPS_ESPERADAS)
 
 CAMINHO_LOG_AUDITORIA = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "logs", "correcoes_auditoria.jsonl"
@@ -550,29 +563,42 @@ def buscar_itens_nfe(client: SankhyaClient, nunota: int) -> Dict[str, Any]:
 # ---------------------------------------------------------
 # VALIDAÇÕES FISCAIS
 # ---------------------------------------------------------
-def validar_top_1724(cabecalho: Dict[str, Any]) -> Dict[str, Any]:
-    """Valida se a NF-e pertence à TOP esperada."""
+def validar_top_escopo(cabecalho: Dict[str, Any]) -> Dict[str, Any]:
+    """Valida se a NF-e pertence a alguma das TOPs conferidas pelo agente."""
     top_encontrada = str(
         get_campo(cabecalho, "CODTIPOPER", "TOP", default="")
     ).strip()
 
-    if top_encontrada == TOP_ESPERADA:
+    # Plano A (CRUD) e Plano B (SQL) podem devolver o CODTIPOPER como texto ou
+    # como número. Se vier numérico com casa decimal ("201.0"), normalizamos
+    # para não classificar indevidamente a nota como fora do escopo.
+    if top_encontrada.endswith(".0"):
+        top_encontrada = top_encontrada[:-2]
+
+    if top_encontrada in TOPS_ESPERADAS:
+        descricao_top = TOPS_ESPERADAS[top_encontrada]
+
         return {
             "status": "APROVADO",
-            "regra": "REGRA_TOP_1724_001",
+            "regra": "REGRA_TOP_ESCOPO_001",
             "campo": "CODTIPOPER",
             "valor_encontrado": top_encontrada,
-            "valor_esperado": TOP_ESPERADA,
-            "mensagem": "NF-e pertence à TOP 1724.",
+            "valor_esperado": listar_tops_esperadas(),
+            "descricao_top": descricao_top,
+            "mensagem": f"NF-e pertence à TOP {top_encontrada} ({descricao_top}).",
         }
 
     return {
         "status": "FORA_DO_ESCOPO",
-        "regra": "REGRA_TOP_1724_001",
+        "regra": "REGRA_TOP_ESCOPO_001",
         "campo": "CODTIPOPER",
         "valor_encontrado": top_encontrada,
-        "valor_esperado": TOP_ESPERADA,
-        "mensagem": "NF-e não pertence à TOP 1724.",
+        "valor_esperado": listar_tops_esperadas(),
+        "descricao_top": "",
+        "mensagem": (
+            "NF-e não pertence a nenhuma das TOPs conferidas pelo agente "
+            f"({listar_tops_esperadas()})."
+        ),
     }
 
 
@@ -615,7 +641,7 @@ def validar_itens_icms(
             revisoes.append({
                 **log_base,
                 "status": "REVISAO_MANUAL",
-                "regra": "REGRA_ICMS_1724_CFOP_OBRIGATORIO",
+                "regra": "REGRA_ICMS_USO_CONSUMO_CFOP_OBRIGATORIO",
                 "mensagem": "Item sem CFOP retornado pela consulta.",
             })
             continue
@@ -624,7 +650,7 @@ def validar_itens_icms(
             revisoes.append({
                 **log_base,
                 "status": "REVISAO_MANUAL",
-                "regra": "REGRA_ICMS_1724_CST_OBRIGATORIO",
+                "regra": "REGRA_ICMS_USO_CONSUMO_CST_OBRIGATORIO",
                 "mensagem": "Item sem CST ICMS retornado pela consulta.",
             })
             continue
@@ -637,7 +663,7 @@ def validar_itens_icms(
 
         log_decisao = {
             **log_base,
-            "regra": "REGRA_ICMS_1724_USO_CONSUMO",
+            "regra": "REGRA_ICMS_USO_CONSUMO",
             "resultado_regra": retorno_regra,
         }
 
@@ -692,12 +718,15 @@ def processar_nfe(client: SankhyaClient, chave_nfe: str) -> Dict[str, Any]:
     nunota = get_campo(cabecalho, "NUNOTA")
     nunota = limpar_numero(nunota, "NUNOTA")
 
-    validacao_top = validar_top_1724(cabecalho)
+    validacao_top = validar_top_escopo(cabecalho)
 
     if validacao_top["status"] != "APROVADO":
         return resultado_padrao(
             status="FORA_DO_ESCOPO",
-            mensagem="NF-e encontrada, porém está fora do escopo da TOP 1724.",
+            mensagem=(
+                "NF-e encontrada, porém está fora do escopo das TOPs conferidas "
+                f"({listar_tops_esperadas()})."
+            ),
             dados={
                 "chave_nfe": chave_nfe,
                 "nunota": nunota,
@@ -729,15 +758,16 @@ def processar_nfe(client: SankhyaClient, chave_nfe: str) -> Dict[str, Any]:
     )
 
     status_final = validacao_icms["status"]
+    top_da_nota = validacao_top["valor_encontrado"]
 
     if status_final == "APROVADO":
-        mensagem = "NF-e TOP 1724 aprovada nas validações iniciais de ICMS."
+        mensagem = f"NF-e TOP {top_da_nota} aprovada nas validações iniciais de ICMS."
     elif status_final == "REVISAO_MANUAL":
         mensagem = (
-            "NF-e TOP 1724 precisa de revisão manual em um ou mais itens."
+            f"NF-e TOP {top_da_nota} precisa de revisão manual em um ou mais itens."
         )
     else:
-        mensagem = "NF-e TOP 1724 possui divergências fiscais nos itens."
+        mensagem = f"NF-e TOP {top_da_nota} possui divergências fiscais nos itens."
 
     return resultado_padrao(
         status=status_final,
@@ -939,7 +969,10 @@ def executar_diagnostico(client: SankhyaClient) -> Dict[str, Any]:
 # ---------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(
-        description="Agente IA Sankhya - Conferência Fiscal NF-e TOP 1724"
+        description=(
+            "Agente IA Sankhya - Conferência Fiscal NF-e Uso e Consumo "
+            f"(TOPs {listar_tops_esperadas()})"
+        )
     )
 
     parser.add_argument(
@@ -950,7 +983,9 @@ def main():
 
     args = parser.parse_args()
 
-    logger.info("Iniciando Agente IA Sankhya - TOP 1724")
+    logger.info(
+        "Iniciando Agente IA Sankhya - TOPs no escopo: %s", listar_tops_esperadas()
+    )
 
     motor_ok = testar_motor_regras()
 

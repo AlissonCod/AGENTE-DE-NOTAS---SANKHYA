@@ -421,7 +421,7 @@
 
     <main>
       <div class="hero">
-        <div class="eyebrow">TOP 1724 · Uso e Consumo</div>
+        <div class="eyebrow">TOPs 1724 e 201 · Uso e Consumo</div>
         <h1>Agente de Conferência Fiscal</h1>
         <p class="lead-sub">Validação automática de NF-e por CFOP, CST e UF de origem.</p>
       </div>
@@ -437,7 +437,26 @@
                 <p>
                   O Agente de Conferência Fiscal realiza a validação automática
                   das NF-es de entrada referentes ao fluxo de Uso e Consumo,
-                  conforme as diretrizes fiscais da TOP 1724.
+                  conforme as diretrizes fiscais das TOPs conferidas.
+                </p>
+
+                <h6 class="rules-subtitle">TOPs conferidas</h6>
+
+                <ul class="ring-list">
+                  <li class="ring-item">
+                    <span class="ring-num">1724</span>
+                    <span><strong>Compra - Uso/Consumo</strong></span>
+                  </li>
+                  <li class="ring-item">
+                    <span class="ring-num">201</span>
+                    <span><strong>Compra - Uso/Consumo - Sem crédito</strong></span>
+                  </li>
+                </ul>
+
+                <p>
+                  As duas TOPs seguem exatamente as mesmas regras de CFOP e CST.
+                  Notas de qualquer outra TOP são devolvidas como
+                  <strong>FORA DO ESCOPO</strong>, sem serem validadas.
                 </p>
 
                 <p>
@@ -506,7 +525,8 @@
 
                 <p class="rules-footnote">
                   Quando a combinação entre CFOP, CST e UF de origem estiver
-                  correta, a nota será aprovada para o fluxo fiscal da TOP 1724.
+                  correta, a nota será aprovada para o fluxo fiscal de Uso e
+                  Consumo.
                 </p>
               </div>
             </div>
@@ -1040,6 +1060,20 @@
 
         const cabecalho = data.dados.cabecalho || {};
         const validacaoIcms = data.dados.validacao_icms;
+        const validacaoTop = data.dados.validacao_top || {};
+
+        // Com mais de uma TOP no escopo (1724 e 201), o usuário precisa ver de
+        // qual delas é a nota. Preferimos o valor já normalizado pelo backend e
+        // caímos para o cabeçalho bruto se a validação não tiver rodado.
+        const codTipOper =
+          validacaoTop.valor_encontrado ||
+          cabecalho.CODTIPOPER ||
+          cabecalho.codtipoper ||
+          "N/A";
+        const descricaoTop = validacaoTop.descricao_top || "";
+        const topLabel = descricaoTop
+          ? `${codTipOper} — ${descricaoTop}`
+          : codTipOper;
 
         const numNota = cabecalho.NUMNOTA || "N/A";
         const nunota = cabecalho.NUNOTA || "N/A"; // ADD POR ALISSON 08/07
@@ -1120,6 +1154,13 @@
               <div class="d-flex w-100 justify-content-between">
                 <h6 class="mb-1">Chave da Nota</h6>
                 <small class="mono" style="color: var(--color-text-muted);">${chave}</small>
+              </div>
+            </div>
+
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">TOP</h6>
+                <small style="color: var(--color-text-muted);">${topLabel}</small>
               </div>
             </div>
 
