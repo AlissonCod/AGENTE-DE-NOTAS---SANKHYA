@@ -33,12 +33,13 @@
         --color-dark: #0e1410;
         --color-black: #000000;
         --color-white: #ffffff;
+        --color-offwhite: #faf9f5;
         --color-gray-light: #f4f4f2;
-        --color-border: #e0e0e0;
+        --color-border: #e4e2dc;
 
         /* Institucional (Eco/Madeira) */
         --color-primary-green: #2f6b3a;
-        --color-green-dark: #1d3f22;
+        --color-green-dark: #1f3d22;
         --color-green-light: #6fa46f;
         --color-wood-brown: #7a5230;
         --color-wood-dark: #3e2c1c;
@@ -57,6 +58,9 @@
         --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.06);
         --transition: 150ms ease;
 
+        /* Largura da coluna única */
+        --col-width: 560px;
+
         /* Aliases (nomes usados em pontos antigos do CSS/JS) */
         --leaf: var(--color-green-light);
         --bark-950: var(--color-text-main);
@@ -70,10 +74,9 @@
 
       ::selection { background: rgba(139, 168, 92, 0.35); color: var(--color-text-main); }
 
-      /* Troca para o tema claro */
       body {
         font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-        background-color: var(--color-white);
+        background-color: var(--color-offwhite);
         color: var(--color-text-muted);
         display: flex;
         flex-direction: column;
@@ -122,12 +125,18 @@
       }
 
       main { flex: 1; }
-      .container { max-width: 1200px; }
+
+      /* ---------- Coluna única ---------- */
+      .app-col {
+        width: 100%;
+        max-width: var(--col-width);
+        margin-inline: auto;
+        padding-inline: 1rem;
+      }
 
       /* ---------- Hero ---------- */
       .hero {
-        position: relative;
-        padding: clamp(2.4rem, 5vw, 3.6rem) 0 clamp(1.8rem, 3vw, 2.4rem);
+        padding: clamp(2rem, 5vw, 3rem) 0 clamp(1.2rem, 2.5vw, 1.6rem);
         text-align: center;
       }
 
@@ -153,6 +162,44 @@
         margin: 0 auto;
       }
 
+      /* ---------- Pill "Ver regras de validação" ---------- */
+      .rules-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding: 0.35rem 0.9rem 0.35rem 0.4rem;
+        background-color: var(--color-white);
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        font-size: 0.83rem;
+        font-weight: 500;
+        color: var(--color-text-muted);
+        transition: border-color var(--transition), color var(--transition), box-shadow var(--transition);
+      }
+      .rules-pill:hover {
+        border-color: var(--color-primary-green);
+        color: var(--color-text-main);
+      }
+      .rules-pill:focus-visible {
+        outline: 2px solid var(--color-primary-green);
+        outline-offset: 2px;
+      }
+      .rules-pill .i-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: var(--color-primary-green);
+        color: var(--color-white);
+        font-family: "Fraunces", serif;
+        font-size: 0.74rem;
+        font-weight: 700;
+        line-height: 1;
+      }
+
       /* ---------- Cards ---------- */
       .card {
         background-color: var(--color-white);
@@ -162,7 +209,6 @@
         color: var(--color-text-muted);
         transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
       }
-
 
       .card .card-title, .card h5, .card h6 { color: var(--color-text-main); }
       .card-header { background: transparent; border-bottom: 1px solid var(--color-border); }
@@ -191,8 +237,6 @@
         transition: background-color var(--transition), border-color var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition);
       }
 
-
-
       .btn-primary {
         background-color: var(--color-green-dark);
         border-color: var(--color-green-dark);
@@ -215,8 +259,6 @@
         color: var(--color-text-light);
         border-radius: 0.4rem;
       }
-
-
       .btn-secondary:hover, .btn-secondary:focus {
         background-color: var(--color-wood-brown);
         border-color: var(--color-wood-brown);
@@ -226,52 +268,126 @@
 
       .spinner-border-sm { width: 1rem; height: 1rem; border-width: 0.2em; }
 
-      /* ---------- Regras: anéis de crescimento ---------- */
-      .rules-card .card-body { padding: 1.75rem; }
-
-      .rules-card p { font-size: 0.87rem; line-height: 1.65; }
-
-      .rules-subtitle {
-        color: var(--color-green-dark);
-        font-size: 0.9rem;
-        font-weight: 600;
-        margin-top: 1.6rem;
-        margin-bottom: 0.9rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid var(--color-border);
-      }
-
-      .ring-list { list-style: none; padding-left: 0; margin-bottom: 0; }
-
-      .ring-item {
-        display: grid;
-        grid-template-columns: 2.5rem 1fr;
-        gap: 0.85rem;
-        padding: 0.7rem 0;
-        border-bottom: 1px solid var(--color-border);
-        font-size: 0.85rem;
-      }
-      .ring-item:last-child { border-bottom: none; }
-
-      .ring-num {
-        font-family: "JetBrains Mono", monospace;
-        color: var(--color-wood-brown);
-        font-weight: 600;
-        font-size: 0.82rem;
+      /* ---------- Abas segmentadas ---------- */
+      .seg {
         display: flex;
-        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem;
+        background-color: var(--color-gray-light);
+        border: 1px solid var(--color-border);
+        border-radius: 0.5rem;
+        margin-bottom: 1.25rem;
       }
 
-      .ring-item strong { color: var(--color-text-main); }
-      .ring-item .cst-tag {
+      .seg-btn {
+        flex: 1;
+        border: 1px solid transparent;
+        background: transparent;
+        border-radius: 0.38rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.87rem;
+        font-weight: 600;
+        color: var(--color-text-muted);
+        transition: background-color var(--transition), color var(--transition), border-color var(--transition);
+      }
+      .seg-btn:hover { color: var(--color-text-main); }
+      .seg-btn[aria-selected="true"] {
+        background-color: var(--color-white);
+        border-color: var(--color-border);
+        color: var(--color-green-dark);
+        box-shadow: var(--shadow-soft);
+      }
+      .seg-btn:focus-visible {
+        outline: 2px solid var(--color-primary-green);
+        outline-offset: -2px;
+      }
+
+      /* ---------- Modal de regras ---------- */
+      #modalRegras .modal-dialog { max-width: 560px; }
+
+      #modalRegras .modal-content {
+        border-radius: 10px;
+        border: 1px solid var(--color-border);
+        background-color: var(--color-white);
+        color: var(--color-text-muted);
+      }
+
+      #modalRegras .modal-body { padding: 1.6rem; max-height: 78vh; overflow-y: auto; }
+
+      #modalRegras .modal-title { font-size: 1.15rem; }
+
+      .modal-close-abs {
+        position: absolute;
+        top: 0.85rem;
+        right: 0.9rem;
+        z-index: 2;
+      }
+
+      .rules-intro { font-size: 0.87rem; line-height: 1.6; margin: 0.6rem 0 1.1rem; }
+
+      .top-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.3rem; }
+
+      .top-tag {
+        flex: 1 1 auto;
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.4rem;
+        padding: 0.45rem 0.7rem;
+        background-color: var(--success-bg);
+        border: 1px solid rgba(47, 107, 58, 0.22);
+        border-radius: 0.4rem;
+        font-size: 0.78rem;
+        color: var(--color-text-main);
+        white-space: nowrap;
+      }
+      .top-tag .top-code {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 600;
+        color: var(--color-green-dark);
+      }
+
+      .rules-table-wrap { overflow-x: auto; }
+
+      .rules-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+      }
+      .rules-table th {
+        text-align: left;
+        font-family: "Inter", sans-serif;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+        padding: 0 0.5rem 0.5rem 0;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .rules-table td {
+        padding: 0.55rem 0.5rem 0.55rem 0;
+        border-bottom: 1px solid var(--color-border);
+        vertical-align: middle;
+      }
+      .rules-table tr:last-child td { border-bottom: none; }
+      .rules-table td:first-child {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 600;
+        color: var(--color-wood-brown);
+        white-space: nowrap;
+      }
+      .rules-table td:nth-child(2) { color: var(--color-text-main); }
+      .rules-table td:last-child { padding-right: 0; white-space: nowrap; }
+
+      .cst-chip {
         display: inline-block;
-        margin-top: 0.2rem;
+        margin: 0.1rem 0.2rem 0.1rem 0;
         font-family: "JetBrains Mono", monospace;
         font-size: 0.72rem;
         color: var(--color-primary-green);
         background: var(--success-bg);
         border: 1px solid rgba(47, 107, 58, 0.2);
-        padding: 0.1rem 0.45rem;
+        padding: 0.1rem 0.4rem;
         border-radius: 0.25rem;
       }
 
@@ -279,24 +395,13 @@
         background-color: var(--danger-bg);
         border-left: 3px solid var(--danger);
         border-radius: 0.4rem;
-        padding: 1rem 1.1rem;
-        margin-top: 1.4rem;
-      } 
-      .rules-alert p { font-size: 0.84rem; margin-bottom: 0; color: var(--color-text-muted); }
+        padding: 0.9rem 1rem;
+        margin-top: 1.3rem;
+      }
+      .rules-alert p { font-size: 0.82rem; line-height: 1.55; margin-bottom: 0; color: var(--color-text-muted); }
       .rules-alert strong { color: var(--color-text-main); }
 
-      .rules-footnote {
-        margin-top: 1.1rem;
-        font-size: 0.84rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--color-border);
-      }
-
-      @media (min-width: 992px) {
-        .rules-card { position: sticky; top: 1.5rem; }
-      }
-
-      /* ---------- Status pipeline (signature element) ---------- */
+      /* ---------- Status pipeline ---------- */
       .pipeline {
         display: flex;
         align-items: center;
@@ -331,13 +436,13 @@
         height: 2px;
         background: var(--color-border);
         min-width: 1.5rem;
+        transition: background-color var(--transition);
       }
       .pipeline .step.done .node { border-color: var(--color-primary-green); background: var(--success-bg); color: var(--color-green-dark); }
       .pipeline .step.fail .node { border-color: var(--danger); background: rgba(209,104,90,0.15); color: var(--danger); }
-      .pipeline .connector { transition: background-color var(--transition); }
       .pipeline .connector.done { background: var(--color-primary-green); }
 
-      /* ---------- Resultado ---------- */ 
+      /* ---------- Resultado ---------- */
       #status-badge.alert {
         border-radius: 0.5rem;
         border: 1px solid var(--ring-line);
@@ -352,6 +457,12 @@
         transition: background-color var(--transition), border-color var(--transition), transform var(--transition);
       }
       .list-group-item h6 { color: var(--color-text-main); }
+      .list-group-item .mono, .list-group-item small { overflow-wrap: anywhere; }
+      .list-group-item .d-flex { gap: 0.75rem; }
+      #detalhes-processamento pre, #modalDetalhesNotaBody pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
       .list-group-item-action:hover {
         background-color: #e9e9e9;
         color: var(--color-text-main);
@@ -387,28 +498,35 @@
       }
       .modal-header, .modal-footer { border-color: var(--color-border); }
 
-      @media (max-width: 991px) {
-        .container { max-width: 95%; }
-      }
-
       @media (max-width: 767px) {
         .app-header .logo { height: 28px; }
         .header-status span:not(.dot) { display: none; }
-        .rules-card .card-body { padding: 1.25rem; }
-        .ring-item { grid-template-columns: 2rem 1fr; gap: 0.6rem; }
         .card-body.p-4 { padding: 1.25rem !important; }
         .pipeline { justify-content: flex-start; }
       }
 
+      @media (max-width: 575px) {
+        #modalRegras .modal-dialog {
+          width: 95%;
+          max-width: 95%;
+          margin: 0.75rem auto;
+        }
+        #modalRegras .modal-body { padding: 1.15rem; max-height: 80vh; }
+        .top-tags { flex-direction: column; }
+        .top-tag { white-space: normal; }
+        .rules-table { font-size: 0.76rem; }
+      }
+
       @media (max-width: 420px) {
-        .hero .eyebrow::before, .hero .eyebrow::after { width: 0.8rem; }
+        .app-col { padding-inline: 0.75rem; }
+        .seg-btn { font-size: 0.82rem; padding: 0.5rem 0.4rem; }
       }
     </style>
   </head>
 
   <body>
     <header class="app-header">
-      <div class="container d-flex justify-content-between align-items-center">
+      <div class="app-col d-flex justify-content-between align-items-center">
         <img
           src="https://eucamad.com.br/linoor/upllive/images/logo_white.png?v=50:12"
           alt="Logo Eucamad"
@@ -420,274 +538,321 @@
     </header>
 
     <main>
-      <div class="hero">
-        <div class="eyebrow">TOPs 1724 e 201 · Uso e Consumo</div>
-        <h1>Agente de Conferência Fiscal</h1>
-        <p class="lead-sub">Validação automática de NF-e por CFOP, CST e UF de origem.</p>
-      </div>
+      <div class="app-col">
+        <div class="hero">
+          <div class="eyebrow">TOPs 1724 e 201 · Uso e Consumo</div>
+          <h1>Agente de Conferência Fiscal</h1>
+          <p class="lead-sub">Validação automática de NF-e por CFOP, CST e UF de origem.</p>
 
-      <div class="container mb-5">
-        <div class="row g-4 align-items-start">
-          <!-- Coluna esquerda - Regras -->
-          <div class="col-lg-5">
-            <div class="card mb-4 rules-card">
-              <div class="card-body">
-                <h5 class="card-title mb-3">Regras de validação</h5>
+          <button
+            type="button"
+            class="rules-pill"
+            id="btnVerRegras"
+            data-bs-toggle="modal"
+            data-bs-target="#modalRegras"
+          >
+            <span class="i-badge" aria-hidden="true">i</span>
+            Ver regras de validação
+          </button>
+        </div>
 
-                <p>
-                  O Agente de Conferência Fiscal realiza a validação automática
-                  das NF-es de entrada referentes ao fluxo de Uso e Consumo,
-                  conforme as diretrizes fiscais das TOPs conferidas.
-                </p>
+        <!-- Card único: Por chave / Por período -->
+        <div class="card mb-4">
+          <div class="card-body p-4">
+            <div class="seg" role="tablist" aria-label="Modo de verificação">
+              <button
+                type="button"
+                class="seg-btn"
+                id="tab-chave"
+                role="tab"
+                aria-selected="true"
+                aria-controls="panel-chave"
+                data-tab="chave"
+              >
+                Por chave
+              </button>
 
-                <h6 class="rules-subtitle">TOPs conferidas</h6>
+              <button
+                type="button"
+                class="seg-btn"
+                id="tab-periodo"
+                role="tab"
+                aria-selected="false"
+                aria-controls="panel-periodo"
+                data-tab="periodo"
+              >
+                Por período
+              </button>
+            </div>
 
-                <ul class="ring-list">
-                  <li class="ring-item">
-                    <span class="ring-num">1724</span>
-                    <span><strong>Compra - Uso/Consumo</strong></span>
-                  </li>
-                  <li class="ring-item">
-                    <span class="ring-num">201</span>
-                    <span><strong>Compra - Uso/Consumo - Sem crédito</strong></span>
-                  </li>
-                </ul>
+            <!-- Aba: Por chave -->
+            <div
+              class="tab-panel"
+              id="panel-chave"
+              role="tabpanel"
+              aria-labelledby="tab-chave"
+              data-panel="chave"
+            >
+              <div class="mb-3">
+                <label for="chaveNfe" class="form-label">
+                  Chave de Acesso da NF-e (44 dígitos)
+                </label>
 
-                <p>
-                  As duas TOPs seguem exatamente as mesmas regras de CFOP e CST.
-                  Notas de qualquer outra TOP são devolvidas como
-                  <strong>FORA DO ESCOPO</strong>, sem serem validadas.
-                </p>
+                <input
+                  type="text"
+                  class="form-control form-control-lg"
+                  id="chaveNfe"
+                  placeholder="Cole os 44 números da chave aqui..."
+                  maxlength="44"
+                  aria-label="Chave de Acesso da NF-e"
+                />
+              </div>
 
-                <p>
-                  A conferência é feita com base na combinação entre CFOP, CST e
-                  UF de origem do emitente, garantindo que somente operações
-                  fiscais compatíveis sejam aprovadas.
-                </p>
+              <div class="d-grid">
+                <button class="btn btn-primary btn-lg" id="btnVerificar">
+                  <span id="btn-text">Verificar Nota no Sankhya</span>
+                  <span
+                    id="btn-spinner"
+                    class="spinner-border spinner-border-sm d-none"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                </button>
+              </div>
+            </div>
 
-                <h6 class="rules-subtitle">CFOPs e CSTs permitidos</h6>
-
-                <ul class="ring-list">
-                  <li class="ring-item">
-                    <span class="ring-num">1556</span>
-                    <span>
-                      <strong>Operações internas</strong><br>
-                      <span class="cst-tag">CST 90</span> <span class="cst-tag">CST 51</span>
-                    </span>
-                  </li>
-                  <li class="ring-item">
-                    <span class="ring-num">2556</span>
-                    <span>
-                      <strong>Operações interestaduais</strong><br>
-                      <span class="cst-tag">CST 00</span>
-                      <span class="cst-tag">CST 20</span>
-                      <span class="cst-tag">CST 90</span>
-                    </span>
-                  </li>
-                  <li class="ring-item">
-                    <span class="ring-num">1407</span>
-                    <span>
-                      <strong>Compra para uso ou consumo</strong><br>
-                      <span class="cst-tag">CST 60</span>
-                    </span>
-                  </li>
-                  <li class="ring-item">
-                    <span class="ring-num">2407</span>
-                    <span>
-                      <strong>Compra interestadual — uso/consumo</strong><br>
-                      <span class="cst-tag">CST 60</span> <span class="cst-tag">CST 20</span>
-                    </span>
-                  </li>
-                  <li class="ring-item">
-                    <span class="ring-num">1653</span>
-                    <span>
-                      <strong>Operações com combustíveis</strong><br>
-                      <span class="cst-tag">CST 00</span> 
-                      <span class="cst-tag">CST 60</span> <span class="cst-tag">CST 61</span>
-                    </span>
-                  </li>
-                  <li class="ring-item">
-                    <span class="ring-num">2653</span>
-                    <span>
-                      <strong>Combustíveis — operação interestadual</strong><br>
-                      <span class="cst-tag">CST 00</span> 
-                      <span class="cst-tag">CST 60</span> <span class="cst-tag">CST 61</span>
-                    </span>
-                  </li>
-
-                <div class="rules-alert">
-                  <p>
-                    <strong>Reprovação:</strong> ocorre quando o CFOP não está
-                    autorizado para o fluxo, quando o CST é incompatível com o
-                    CFOP ou quando a UF de origem é <strong>EX</strong>
-                    utilizando CFOP interestadual 2556 ou 2653.
-                  </p>
+            <!-- Aba: Por período -->
+            <div
+              class="tab-panel d-none"
+              id="panel-periodo"
+              role="tabpanel"
+              aria-labelledby="tab-periodo"
+              data-panel="periodo"
+            >
+              <div class="row g-3 mb-3">
+                <div class="col-12 col-sm-6">
+                  <label for="dataInicio" class="form-label">
+                    Data Início
+                  </label>
+                  <input type="date" class="form-control" id="dataInicio" />
                 </div>
 
-                <p class="rules-footnote">
-                  Quando a combinação entre CFOP, CST e UF de origem estiver
-                  correta, a nota será aprovada para o fluxo fiscal de Uso e
-                  Consumo.
-                </p>
+                <div class="col-12 col-sm-6">
+                  <label for="dataFim" class="form-label">
+                    Data Fim
+                  </label>
+                  <input type="date" class="form-control" id="dataFim" />
+                </div>
+              </div>
+
+              <small
+                id="lote-date-error"
+                class="text-danger d-none mb-3 d-block"
+              >
+                Por favor, selecione as datas de início e fim.
+              </small>
+
+              <div class="d-grid">
+                <button class="btn btn-primary btn-lg" id="btnProcessarLote">
+                  <span id="btn-lote-text">Verificar Notas Automaticamente</span>
+                  <span
+                    id="btn-lote-spinner"
+                    class="spinner-border spinner-border-sm d-none"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                </button>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Coluna direita - Consulta, lote e resultados -->
-          <div class="col-lg-7">
-            <!-- Card de Ação Principal -->
-            <div class="card mb-4">
-              <div class="card-body p-4">
-                <div class="mb-3">
-                  <h5 class="card-title">Processo Manual</h5>
-                </div>
+        <!-- Card para Detalhes das Notas do Lote -->
+        <div id="area-detalhes-lote" class="d-none">
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <h5 class="mb-0">Detalhes do Processo</h5>
 
-                <div class="mb-3">
-                  <label for="chaveNfe" class="form-label">
-                    Chave de Acesso da NF-e (44 dígitos)
-                  </label>
+              <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-success btn-sm" id="btnExportarExcel">
+                  <i class="bi bi-file-earmark-excel"></i>
+                  Exportar Divergências
+                </button>
 
-                  <input
-                    type="text"
-                    class="form-control form-control-lg"
-                    id="chaveNfe"
-                    placeholder="Cole os 44 números da chave aqui..."
-                    maxlength="44"
-                    aria-label="Chave de Acesso da NF-e"
-                  />
-                </div>
-
-                <div class="d-grid">
-                  <button class="btn btn-primary btn-lg" id="btnVerificar">
-                    <span id="btn-text">Verificar Nota no Sankhya</span>
-                    <span
-                      id="btn-spinner"
-                      class="spinner-border spinner-border-sm d-none"
-                      role="status"
-                      aria-hidden="true"
-                    ></span>
-                  </button>
-                </div>
+                <button type="button" class="btn-close" id="btnCloseDetalhesLote" aria-label="Close"></button>
               </div>
             </div>
 
-            <!-- Card para Processamento em Lote -->
-            <div class="card mb-4">
-              <div class="card-body p-4">
-                <h5 class="card-title">Processo Automático</h5>
+            <div class="card-body">
+              <div id="lote-summary" class="mb-3"></div>
 
-                <div class="row g-3 mb-3">
-                  <div class="col-md-6">
-                    <label for="dataInicio" class="form-label">
-                      Data Início
-                    </label>
-                    <input type="date" class="form-control" id="dataInicio" />
-                  </div>
-
-                  <div class="col-md-6">
-                    <label for="dataFim" class="form-label">
-                      Data Fim
-                    </label>
-                    <input type="date" class="form-control" id="dataFim" />
-                  </div>
+              <div class="row g-4">
+                <div class="col-12">
+                  <h6>
+                    <i class="bi bi-check-circle-fill" style="color: var(--leaf);"></i>
+                    Notas Aprovadas
+                  </h6>
+                  <div
+                    id="lote-aprovadas"
+                    class="list-group list-group-flush"
+                  ></div>
                 </div>
 
-                <small
-                  id="lote-date-error"
-                  class="text-danger d-none mb-3 d-block"
-                >
-                  Por favor, selecione as datas de início e fim.
-                </small>
-
-                <div class="d-grid">
-                  <button class="btn btn-primary btn-lg" id="btnProcessarLote">
-                    <span id="btn-lote-text">Verificar Notas Automaticamente</span>
-                    <span
-                      id="btn-lote-spinner"
-                      class="spinner-border spinner-border-sm d-none"
-                      role="status"
-                      aria-hidden="true"
-                    ></span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Card para Detalhes das Notas do Lote -->
-            <div id="area-detalhes-lote" class="d-none">
-              <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                  <button type="button" class="btn-close" id="btnCloseDetalhesLote" aria-label="Close"></button>
-                  <h5 class="mb-0 flex-grow-1 text-center">Detalhes do Processo</h5>
-
-                  <button class="btn btn-success" id="btnExportarExcel">
-                    <i class="bi bi-file-earmark-excel"></i>
-                    Exportar Divergências
-                  </button>
-                </div>
-
-                <div class="card-body">
-                  <div id="lote-summary" class="mb-3"></div>
-
-                  <div class="row">
-                    <div class="col-md-6">
-                      <h6>
-                        <i class="bi bi-check-circle-fill" style="color: var(--leaf);"></i>
-                        Notas Aprovadas
-                      </h6>
-                      <div
-                        id="lote-aprovadas"
-                        class="list-group list-group-flush"
-                      ></div>
-                    </div>
-
-                    <div class="col-md-6">
-                      <h6>
-                        <i class="bi bi-exclamation-triangle-fill" style="color: var(--warning);"></i>
-                        Notas com Divergência ou Revisão
-                      </h6>
-                      <div
-                        id="lote-divergentes"
-                        class="list-group list-group-flush"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Área de Resultados -->
-            <div id="area-resultado" class="d-none">
-              <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                  <h5 class="mb-0">Resultado da Análise Manual</h5>
-                  <button type="button" class="btn-close" id="btnCloseResultado" aria-label="Close"></button>
-                </div>
-
-                <div class="card-body p-4">
-                  <div class="pipeline" id="status-pipeline">
-                    <div class="step" data-step="cfop"><span class="node">1</span><span class="label">CFOP</span></div>
-                    <div class="connector"></div>
-                    <div class="step" data-step="cst"><span class="node">2</span><span class="label">CST</span></div>
-                    <div class="connector"></div>
-                    <div class="step" data-step="uf"><span class="node">3</span><span class="label">UF</span></div>
-                    <div class="connector"></div>
-                    <div class="step" data-step="final"><span class="node">4</span><span class="label">Resultado</span></div>
-                  </div>
-
-                  <div id="status-badge" class="alert" role="alert">
-                    <strong id="status-texto"></strong>
-                    <p id="status-mensagem" class="mb-0"></p>
-                  </div>
-
-                  <div id="detalhes-processamento"></div>
+                <div class="col-12">
+                  <h6>
+                    <i class="bi bi-exclamation-triangle-fill" style="color: var(--warning);"></i>
+                    Notas com Divergência ou Revisão
+                  </h6>
+                  <div
+                    id="lote-divergentes"
+                    class="list-group list-group-flush"
+                  ></div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- Área de Resultados -->
+        <div id="area-resultado" class="d-none">
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">Resultado da Análise Manual</h5>
+              <button type="button" class="btn-close" id="btnCloseResultado" aria-label="Close"></button>
+            </div>
+
+            <div class="card-body p-4">
+              <div class="pipeline" id="status-pipeline">
+                <div class="step" data-step="cfop"><span class="node">1</span><span class="label">CFOP</span></div>
+                <div class="connector"></div>
+                <div class="step" data-step="cst"><span class="node">2</span><span class="label">CST</span></div>
+                <div class="connector"></div>
+                <div class="step" data-step="uf"><span class="node">3</span><span class="label">UF</span></div>
+                <div class="connector"></div>
+                <div class="step" data-step="final"><span class="node">4</span><span class="label">Resultado</span></div>
+              </div>
+
+              <div id="status-badge" class="alert" role="alert">
+                <strong id="status-texto"></strong>
+                <p id="status-mensagem" class="mb-0"></p>
+              </div>
+
+              <div id="detalhes-processamento"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
+
+    <!-- Modal: Regras de validação -->
+    <div
+      class="modal fade"
+      id="modalRegras"
+      tabindex="-1"
+      aria-labelledby="modalRegrasLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content position-relative">
+          <button
+            type="button"
+            class="btn-close modal-close-abs"
+            data-bs-dismiss="modal"
+            aria-label="Fechar"
+          ></button>
+
+          <div class="modal-body">
+            <h5 class="modal-title" id="modalRegrasLabel">Regras de validação</h5>
+
+            <p class="rules-intro">
+              Valida NF-e de entrada do fluxo Uso e Consumo pela combinação
+              CFOP + CST + UF de origem. Outras TOPs retornam como fora do
+              escopo.
+            </p>
+
+            <div class="top-tags">
+              <span class="top-tag">
+                <span class="top-code">1724</span> Compra - Uso/Consumo
+              </span>
+
+              <span class="top-tag">
+                <span class="top-code">201</span> Uso/Consumo - Sem crédito
+              </span>
+            </div>
+
+            <div class="rules-table-wrap">
+              <table class="rules-table">
+                <thead>
+                  <tr>
+                    <th scope="col">CFOP</th>
+                    <th scope="col">Operação</th>
+                    <th scope="col">CSTs</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr>
+                    <td>1556</td>
+                    <td>Operações internas</td>
+                    <td>
+                      <span class="cst-chip">90</span><span class="cst-chip">51</span>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>2556</td>
+                    <td>Operações interestaduais</td>
+                    <td>
+                      <span class="cst-chip">00</span><span class="cst-chip">20</span><span class="cst-chip">90</span>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>1407</td>
+                    <td>Compra p/ uso ou consumo</td>
+                    <td>
+                      <span class="cst-chip">60</span>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>2407</td>
+                    <td>Compra interestadual — uso/consumo</td>
+                    <td>
+                      <span class="cst-chip">60</span><span class="cst-chip">20</span>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>1653</td>
+                    <td>Combustíveis</td>
+                    <td>
+                      <span class="cst-chip">00</span><span class="cst-chip">60</span><span class="cst-chip">61</span>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>2653</td>
+                    <td>Combustíveis — interestadual</td>
+                    <td>
+                      <span class="cst-chip">00</span><span class="cst-chip">60</span><span class="cst-chip">61</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="rules-alert">
+              <p>
+                <strong>Reprovação:</strong> CFOP não autorizado, CST
+                incompatível com o CFOP, ou UF de origem = <strong>EX</strong>
+                com CFOP 2556/2653.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Modal para Detalhes da Nota -->
     <div
@@ -730,7 +895,7 @@
     </div>
 
     <footer class="app-footer">
-      <div class="container text-center">
+      <div class="app-col text-center">
         <p class="mb-1">
           <i class="bi bi-tree-fill" style="color: var(--leaf); font-size: 0.8rem;"></i>
           &copy; <span id="footer-year">2026</span> Eucamad. Excelência em desdobramento de madeira de
@@ -757,6 +922,22 @@
 
     <script>
       document.getElementById("footer-year").textContent = new Date().getFullYear();
+
+      // ---------- Abas segmentadas (Por chave / Por período) ----------
+      const segButtons = document.querySelectorAll(".seg-btn");
+      const tabPanels = document.querySelectorAll(".tab-panel");
+
+      segButtons.forEach((botao) => {
+        botao.addEventListener("click", () => {
+          segButtons.forEach((b) =>
+            b.setAttribute("aria-selected", String(b === botao))
+          );
+
+          tabPanels.forEach((painel) =>
+            painel.classList.toggle("d-none", painel.dataset.panel !== botao.dataset.tab)
+          );
+        });
+      });
 
       const btnVerificar = document.getElementById("btnVerificar");
       const inputChave = document.getElementById("chaveNfe");
@@ -940,7 +1121,7 @@
       const statusCores = {
         APROVADO: {
           bg: "",
-          text: "", 
+          text: "",
           alertBg: "var(--success-bg)",
           alertBorder: "var(--color-primary-green)",
           pill: "background-color: var(--success-bg); color: var(--color-green-dark); border: 1px solid var(--color-primary-green);",
@@ -1389,7 +1570,7 @@
 
           areaDetalhesLote.classList.remove("d-none");
         } catch (error) {
-          loteSummary.innerHTML = ` 
+          loteSummary.innerHTML = `
             <div class="alert" style="background-color: var(--danger-bg); border: 1px solid var(--danger); color: var(--color-text-main);">
               <strong>Erro de Conexão</strong>
               <p>Não foi possível se comunicar com o servidor para processar o lote.</p>
