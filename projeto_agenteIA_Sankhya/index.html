@@ -521,12 +521,18 @@
         .app-col { padding-inline: 0.75rem; }
         .seg-btn { font-size: 0.82rem; padding: 0.5rem 0.4rem; }
       }
+
+      .header-inner {
+  width: 100%;
+  padding-inline: clamp(1rem, 3vw, 2.75rem);
+}
+
     </style>
   </head>
 
   <body>
     <header class="app-header">
-      <div class="app-col d-flex justify-content-between align-items-center">
+        <div class="header-inner d-flex justify-content-between align-items-center">
         <img
           src="https://eucamad.com.br/linoor/upllive/images/logo_white.png?v=50:12"
           alt="Logo Eucamad"
