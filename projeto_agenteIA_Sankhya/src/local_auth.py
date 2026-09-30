@@ -1,5 +1,5 @@
 """
-Armazenamento local das senhas do EucaVerify.
+Armazenamento das senhas do EucaVerify.
 
 Por que as senhas são daqui e não do Sankhya: foi verificado contra este
 ambiente que nenhuma via de validação da senha do ERP está disponível para a
@@ -17,11 +17,24 @@ validade do acesso). O que mora aqui é apenas a senha do EucaVerify.
 
 As senhas nunca são gravadas em texto puro: guardamos o hash do Werkzeug
 (scrypt por padrão), que já vem junto com o Flask.
+
+Onde essa tabela mora depende do ambiente:
+
+  * havendo EUCAVERIFY_DATABASE_URL (ou DATABASE_URL), num Postgres — é o
+    caso em produção. O disco do serviço no Render é apagado a cada deploy,
+    restart e hibernação, então um arquivo local levaria as senhas embora e a
+    equipe cairia no primeiro acesso a cada publicação;
+  * sem essa variável, no SQLite de dados/eucaverify.db, que continua sendo o
+    caminho cômodo para desenvolvimento local.
+
+O esquema e as consultas são os mesmos nos dois bancos. A única diferença de
+sintaxe que nos afeta é o marcador de parâmetro, resolvida em _Conexao.
 """
 
 import logging
 import os
 import sqlite3
+import threading
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional
@@ -35,15 +48,127 @@ TAMANHO_MINIMO_SENHA = 8
 _PASTA_PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _CAMINHO_PADRAO = os.path.join(_PASTA_PROJETO, "dados", "eucaverify.db")
 
+_ESQUEMA = """
+    CREATE TABLE IF NOT EXISTS usuarios (
+        nomeusu       TEXT PRIMARY KEY,
+        codusu        TEXT,
+        senha_hash    TEXT NOT NULL,
+        criado_em     TEXT NOT NULL,
+        atualizado_em TEXT NOT NULL,
+        ultimo_acesso TEXT
+    )
+"""
+
+# Chave arbitrária e fixa do advisory lock que serializa a criação do esquema
+# no Postgres. Ver _garantir_esquema.
+_TRAVA_ESQUEMA_POSTGRES = 827364501
+
+# O esquema só precisa ser conferido uma vez por processo; sem isso, cada
+# login pagaria um DDL à toa, o que num banco remoto custa uma ida e volta.
+_esquema_conferido = False
+_trava_esquema = threading.Lock()
+
+
+def url_postgres() -> str:
+    """URL de conexão do Postgres, ou string vazia para usar o SQLite.
+
+    EUCAVERIFY_DATABASE_URL tem precedência para permitir apontar este banco
+    para um servidor diferente do que o resto da aplicação usaria, mas o
+    DATABASE_URL padrão (que é o nome que Neon e Render já entregam) basta.
+    """
+    return (
+        os.getenv("EUCAVERIFY_DATABASE_URL") or os.getenv("DATABASE_URL") or ""
+    ).strip()
+
+
+def usando_postgres() -> bool:
+    """Informa se as senhas estão num Postgres em vez do arquivo local."""
+    return bool(url_postgres())
+
 
 def caminho_banco() -> str:
-    """Arquivo SQLite com as credenciais locais."""
+    """Arquivo SQLite usado quando não há Postgres configurado."""
     return (os.getenv("EUCAVERIFY_DB") or "").strip() or _CAMINHO_PADRAO
 
 
-@contextmanager
-def _conexao():
-    """Abre o banco criando a pasta e o esquema, se ainda não existirem.
+def descricao_armazenamento() -> str:
+    """Resume onde as senhas estão, para log e para a tela de administração."""
+    if not usando_postgres():
+        return f"SQLite em {caminho_banco()}"
+
+    # A URL carrega a senha do banco, então nunca vai inteira para o log.
+    url = url_postgres()
+    servidor = url.split("@")[-1].split("?")[0] if "@" in url else "servidor remoto"
+
+    return f"Postgres em {servidor}"
+
+
+class _Conexao:
+    """Envelope fino que faz o mesmo SQL servir aos dois bancos.
+
+    O sqlite3 marca parâmetro com '?' e o psycopg com '%s'. Escrevemos tudo
+    com '?' e traduzimos aqui; nenhuma consulta deste módulo tem '?' dentro de
+    literal, então a troca é segura. Os valores seguem parametrizados — em
+    momento algum são interpolados no SQL.
+    """
+
+    def __init__(self, conexao, postgres: bool):
+        self._conexao = conexao
+        self._postgres = postgres
+
+    def execute(self, sql: str, params=()):
+        if self._postgres:
+            sql = sql.replace("?", "%s")
+
+        return self._conexao.execute(sql, params)
+
+
+def _garantir_esquema(conexao: _Conexao, postgres: bool) -> None:
+    """Cria a tabela na primeira conexão do processo.
+
+    No Postgres, CREATE TABLE IF NOT EXISTS não protege contra dois workers
+    do Gunicorn criando a tabela no mesmo instante — o índice interno do
+    catálogo acusa duplicidade. O advisory lock faz o segundo esperar e, ao
+    chegar sua vez, encontrar a tabela já pronta. Ele é liberado no commit.
+    """
+    global _esquema_conferido
+
+    if _esquema_conferido:
+        return
+
+    with _trava_esquema:
+        if _esquema_conferido:
+            return
+
+        if postgres:
+            conexao.execute(
+                "SELECT pg_advisory_xact_lock(?)", (_TRAVA_ESQUEMA_POSTGRES,)
+            )
+
+        conexao.execute(_ESQUEMA)
+        _esquema_conferido = True
+
+
+def _conectar_postgres(url: str):
+    """Abre a conexão com o Postgres, exigindo TLS.
+
+    O Neon só aceita conexão cifrada e já entrega a URL com sslmode, mas
+    completamos quando ela vem sem — assim uma URL copiada pela metade falha
+    com erro claro de credencial em vez de trafegar a senha em texto puro.
+    """
+    import psycopg
+    from psycopg.rows import dict_row
+
+    if "sslmode=" not in url:
+        url += ("&" if "?" in url else "?") + "sslmode=require"
+
+    # O Neon hiberna o compute quando ninguém usa; a primeira conexão depois
+    # disso espera o banco acordar, o que costuma levar poucos segundos.
+    return psycopg.connect(url, row_factory=dict_row, connect_timeout=15)
+
+
+def _conectar_sqlite():
+    """Abre o SQLite, criando a pasta se ainda não existir.
 
     SQLite em vez de um arquivo JSON porque o Gunicorn roda vários workers:
     dois logins simultâneos gravando no mesmo JSON corromperiam o arquivo,
@@ -55,23 +180,25 @@ def _conexao():
     conexao = sqlite3.connect(caminho, timeout=10)
     conexao.row_factory = sqlite3.Row
 
+    return conexao
+
+
+@contextmanager
+def _conexao():
+    """Entrega uma conexão pronta, com o esquema garantido, e faz o commit."""
+    postgres = usando_postgres()
+    bruta = _conectar_postgres(url_postgres()) if postgres else _conectar_sqlite()
+    conexao = _Conexao(bruta, postgres)
+
     try:
-        conexao.execute(
-            """
-            CREATE TABLE IF NOT EXISTS usuarios (
-                nomeusu       TEXT PRIMARY KEY,
-                codusu        TEXT,
-                senha_hash    TEXT NOT NULL,
-                criado_em     TEXT NOT NULL,
-                atualizado_em TEXT NOT NULL,
-                ultimo_acesso TEXT
-            )
-            """
-        )
+        _garantir_esquema(conexao, postgres)
         yield conexao
-        conexao.commit()
+        bruta.commit()
+    except Exception:
+        bruta.rollback()
+        raise
     finally:
-        conexao.close()
+        bruta.close()
 
 
 def _chave(nomeusu: str) -> str:

@@ -1,6 +1,7 @@
- flask
- pandas
- openpyxl
- requests
- python-dotenv
- gunicorn
+flask
+pandas
+openpyxl
+requests
+python-dotenv
+gunicorn
+psycopg[binary]

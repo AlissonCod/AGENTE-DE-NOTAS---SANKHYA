@@ -37,9 +37,23 @@ def _cliente():
     return client
 
 
+def _mostrar_armazenamento() -> None:
+    """Diz em qual banco este comando está mexendo.
+
+    Rodar o script sem EUCAVERIFY_DATABASE_URL no ambiente administra o SQLite
+    local, não a produção. Imprimir a origem evita liberar a senha de alguém no
+    banco errado e achar que não funcionou.
+    """
+    from src import local_auth
+
+    print(f"Banco de senhas: {local_auth.descricao_armazenamento()}\n")
+
+
 def comando_listar() -> None:
     """Mostra quem já criou senha no EucaVerify."""
     from src import local_auth
+
+    _mostrar_armazenamento()
 
     usuarios = local_auth.listar_usuarios()
 
@@ -63,6 +77,8 @@ def comando_autorizados() -> None:
     from main import normalizar_linhas_sankhya
     from src import local_auth
     from src.user_auth import grupos_autorizados
+
+    _mostrar_armazenamento()
 
     client = _cliente()
     grupos = ", ".join(str(g) for g in grupos_autorizados())
@@ -111,6 +127,8 @@ def comando_liberar(nomeusu: str) -> None:
     """Apaga a senha para a pessoa refazer o primeiro acesso."""
     from src import local_auth
 
+    _mostrar_armazenamento()
+
     if local_auth.remover_usuario(nomeusu):
         print(f"Senha de '{nomeusu}' removida.")
         print("A pessoa pode criar outra em /primeiro-acesso, confirmando o e-mail.")
@@ -122,6 +140,8 @@ def comando_definir_senha(nomeusu: str) -> None:
     """Define a senha manualmente, para quem não tem e-mail na TSIUSU."""
     from src import local_auth
     from src.user_auth import buscar_usuario_autorizado
+
+    _mostrar_armazenamento()
 
     client = _cliente()
     linha = buscar_usuario_autorizado(client, nomeusu)
