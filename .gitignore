@@ -1,1 +1,5 @@
 .env
+
+# Banco local do EucaVerify (hashes de senha)
+dados/
+*.db

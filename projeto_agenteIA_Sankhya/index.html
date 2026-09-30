@@ -500,7 +500,9 @@
 
       @media (max-width: 767px) {
         .app-header .logo { height: 28px; }
-        .header-status span:not(.dot) { display: none; }
+        /* Oculta textos decorativos do cabeçalho no mobile, mas preserva a
+           identificação de quem está logado e o botão de sair. */
+        .header-status > span:not(.dot):not(.usuario-logado) { display: none; }
         .card-body.p-4 { padding: 1.25rem !important; }
         .pipeline { justify-content: flex-start; }
       }
@@ -527,6 +529,45 @@
   padding-inline: clamp(1rem, 3vw, 2.75rem);
 }
 
+      /* ---------- Identificação do usuário no cabeçalho ---------- */
+      .usuario-logado {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.84rem;
+        color: var(--color-text-light);
+      }
+
+      .usuario-nome { font-weight: 600; }
+
+      .btn-sair {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-left: 0.9rem;
+        padding: 0.32rem 0.7rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--color-green-light);
+        border: 1px solid var(--color-wood-dark);
+        border-radius: 0.35rem;
+        text-decoration: none;
+        transition: color var(--transition), border-color var(--transition),
+          background-color var(--transition);
+      }
+
+      .btn-sair:hover, .btn-sair:focus {
+        color: var(--color-white);
+        border-color: var(--color-green-light);
+        background-color: rgba(111, 164, 111, 0.15);
+      }
+
+      @media (max-width: 575px) {
+        .btn-sair span { display: none; }
+        .btn-sair { margin-left: 0.5rem; padding: 0.32rem 0.5rem; }
+        .usuario-nome { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      }
+
     </style>
   </head>
 
@@ -539,6 +580,15 @@
           class="logo"
         />
         <div class="header-status" style="color: var(--color-text-light);">
+          <span class="usuario-logado" id="usuario-logado" hidden>
+            <i class="bi bi-person-circle" aria-hidden="true"></i>
+            <span id="usuario-nome" class="usuario-nome"></span>
+          </span>
+
+          <a href="/logout" class="btn-sair" id="btn-sair" hidden>
+            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+            <span>Sair</span>
+          </a>
         </div>
       </div>
     </header>
@@ -969,33 +1019,53 @@
       const loteAprovadas = document.getElementById("lote-aprovadas");
       const loteDivergentes = document.getElementById("lote-divergentes");
 
+      // ---------- Sessão do usuário ----------
+      // Toda rota do servidor responde 401 quando a sessão expira. Centralizar
+      // o tratamento aqui evita que a pessoa perca o trabalho olhando uma tela
+      // que silenciosamente parou de funcionar.
+      function sessaoExpirada(response) {
+        if (response.status !== 401) return false;
+
+        window.location.href = "/login?proximo=" + encodeURIComponent(
+          window.location.pathname
+        );
+
+        return true;
+      }
+
+      async function carregarUsuarioLogado() {
+        try {
+          const resposta = await fetch("/sessao");
+
+          if (!resposta.ok) return;
+
+          const dados = await resposta.json();
+          if (!dados.autenticado || !dados.usuario) return;
+
+          document.getElementById("usuario-nome").textContent = dados.usuario.nomeusu;
+          document.getElementById("usuario-logado").hidden = false;
+          document.getElementById("btn-sair").hidden = false;
+        } catch (error) {
+          console.error("Não foi possível carregar os dados da sessão:", error);
+        }
+      }
+      carregarUsuarioLogado();
+
       // ---------- Correção de itens divergentes (UPDATE no Sankhya) ----------
       let regrasCfopCst = {};
 
       async function carregarRegrasIcms() {
         try {
           const resposta = await fetch("/regras-icms");
+
+          if (sessaoExpirada(resposta)) return;
+
           regrasCfopCst = await resposta.json();
         } catch (error) {
           console.error("Não foi possível carregar as regras de CFOP/CST:", error);
         }
       }
       carregarRegrasIcms();
-
-      function obterResponsavel() {
-        let responsavel = sessionStorage.getItem("eucaverify_responsavel");
-        if (!responsavel) {
-          responsavel = window.prompt(
-            "Informe seu nome para registrar quem está corrigindo esta nota:",
-            ""
-          );
-          if (responsavel && responsavel.trim()) {
-            responsavel = responsavel.trim();
-            sessionStorage.setItem("eucaverify_responsavel", responsavel);
-          }
-        }
-        return responsavel ? responsavel.trim() : "";
-      }
 
       function montarBlocoCorrecao(item) {
         const cfopAtual = item.cfop || "";
@@ -1069,18 +1139,13 @@
         const cfopNovo = container.querySelector(".select-cfop").value;
         const cstNovo = container.querySelector(".select-cst").value;
 
-        const responsavel = obterResponsavel();
-        if (!responsavel) {
-          statusEl.textContent = "Informe o nome do responsável para salvar a correção.";
-          statusEl.style.color = "var(--danger)";
-          return;
-        }
-
         botao.disabled = true;
         statusEl.textContent = "Salvando...";
         statusEl.style.color = "var(--color-text-muted)";
 
         try {
+          // O responsável não é mais enviado pelo navegador: o servidor grava
+          // na auditoria o usuário da sessão autenticada no Sankhya.
           const response = await fetch("/corrigir-item", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1093,9 +1158,10 @@
               cfop_novo: cfopNovo,
               cst_novo: cstNovo,
               uf_origem: container.dataset.ufOrigem,
-              responsavel: responsavel,
             }),
           });
+
+          if (sessaoExpirada(response)) return;
 
           const resultado = await response.json();
 
@@ -1203,6 +1269,8 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ chave: chave }),
           });
+
+          if (sessaoExpirada(response)) return;
 
           const data = await response.json();
 
@@ -1513,6 +1581,8 @@
             }),
           });
 
+          if (sessaoExpirada(response)) return;
+
           const resultados = await response.json();
 
           resultadosLoteGlobais = resultados;
@@ -1638,6 +1708,8 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(resultadosLoteGlobais),
           });
+
+          if (sessaoExpirada(response)) return;
 
           if (!response.ok) {
             const erro = await response.json();
