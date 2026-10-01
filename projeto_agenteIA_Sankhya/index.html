@@ -568,10 +568,121 @@
         .usuario-nome { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       }
 
+
+      /* O botão do passo a passo reusa o visual do "Sair", mas é um
+         <button>: sem isto ele viria com o fundo cinza padrão do navegador,
+         que destoa do cabeçalho escuro. */
+      button.btn-sair {
+        background-color: transparent;
+      }
+
+      /* ---------- Passo a passo guiado ---------- */
+      /* O recorte claro em volta do elemento é feito com uma sombra enorme:
+         a div fica sobre o alvo, e tudo o que está fora dela recebe o
+         escurecimento. Assim o próprio elemento da tela continua visível e
+         nítido, em vez de ser substituído por uma captura dele. */
+      .tour-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+      }
+
+      .tour-recorte {
+        position: fixed;
+        border-radius: 10px;
+        border: 2px solid var(--color-green-light);
+        box-shadow: 0 0 0 9999px rgba(14, 20, 16, 0.72);
+        pointer-events: none;
+        transition: all 220ms ease;
+      }
+
+      /* Passos sem elemento na tela (abertura e encerramento): o recorte
+         vira um ponto invisível no centro e sobra só o escurecimento. */
+      .tour-recorte.sem-alvo {
+        width: 0;
+        height: 0;
+        border-color: transparent;
+        border-radius: 0;
+      }
+
+      .tour-balao {
+        position: fixed;
+        width: min(360px, calc(100vw - 32px));
+        background: var(--color-white);
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+        padding: 1.1rem 1.15rem 0.95rem;
+        transition: top 220ms ease, left 220ms ease;
+      }
+
+      .tour-balao .tour-contador {
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-primary-green);
+        font-weight: 600;
+      }
+
+      .tour-balao h5 {
+        margin: 0.35rem 0 0.4rem;
+        font-size: 1.05rem;
+      }
+
+      .tour-balao p {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: var(--color-text-muted);
+      }
+
+      .tour-acoes {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
+      .tour-acoes .tour-nav {
+        display: flex;
+        gap: 0.4rem;
+      }
+
+      .tour-pular {
+        background: none;
+        border: 0;
+        padding: 0.25rem 0;
+        font-size: 0.82rem;
+        color: var(--color-text-muted);
+        text-decoration: underline;
+      }
+
+      .tour-pular:hover, .tour-pular:focus {
+        color: var(--color-text-main);
+      }
+
+      /* Convite de boas-vindas */
+      .modal-boas-vindas .modal-content {
+        border: 0;
+        border-radius: 14px;
+        overflow: hidden;
+      }
+
+      .modal-boas-vindas .selo {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--success-bg);
+        color: var(--color-primary-green);
+        font-size: 1.35rem;
+      }
     </style>
   </head>
 
-  <body>
+  <body data-tour-pendente="{{ 'sim' if tour_pendente else 'nao' }}">
     <header class="app-header">
         <div class="header-inner d-flex justify-content-between align-items-center">
         <img
@@ -584,6 +695,11 @@
             <i class="bi bi-person-circle" aria-hidden="true"></i>
             <span id="usuario-nome" class="usuario-nome"></span>
           </span>
+
+          <button type="button" class="btn-sair" id="btnTour" title="Ver o passo a passo da plataforma">
+            <i class="bi bi-question-circle" aria-hidden="true"></i>
+            <span>Passo a passo</span>
+          </button>
 
           <a href="/logout" class="btn-sair" id="btn-sair" hidden>
             <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
@@ -944,6 +1060,76 @@
               data-bs-dismiss="modal"
             >
               Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Convite do passo a passo (só aparece no primeiro acesso) -->
+    <div
+      class="modal fade modal-boas-vindas"
+      id="modalBoasVindas"
+      tabindex="-1"
+      aria-labelledby="modalBoasVindasLabel"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-body p-4 text-center">
+            <div class="selo mx-auto mb-3" aria-hidden="true">
+              <i class="bi bi-compass"></i>
+            </div>
+
+            <h5 class="modal-title mb-2" id="modalBoasVindasLabel">
+              Primeira vez acessando aqui?
+            </h5>
+
+            <p class="mb-0">
+              Confira o passo a passo de como utilizar a plataforma. São poucos
+              minutos percorrendo a própria tela, e você pode sair quando quiser.
+            </p>
+          </div>
+
+          <div class="modal-footer justify-content-center border-0 pt-0 pb-4">
+            <button type="button" class="btn btn-outline-secondary" id="btnDispensarTour">
+              Agora não
+            </button>
+            <button type="button" class="btn btn-primary" id="btnIniciarTour">
+              Ver o passo a passo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Passo a passo guiado sobre a tela real -->
+    <div class="tour-overlay" id="tour-overlay" hidden>
+      <div class="tour-recorte sem-alvo" id="tour-recorte"></div>
+
+      <div
+        class="tour-balao"
+        id="tour-balao"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tour-titulo"
+      >
+        <div class="tour-contador" id="tour-contador"></div>
+        <h5 id="tour-titulo"></h5>
+        <p id="tour-texto"></p>
+
+        <div class="tour-acoes">
+          <button type="button" class="tour-pular" id="tour-pular">
+            Sair do passo a passo
+          </button>
+
+          <div class="tour-nav">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="tour-anterior">
+              Anterior
+            </button>
+            <button type="button" class="btn btn-sm btn-primary" id="tour-proximo">
+              Próximo
             </button>
           </div>
         </div>
@@ -1734,6 +1920,331 @@
           btnExportarExcel.innerHTML = btnOriginalText;
         }
       });
+
+      // ---------- Passo a passo guiado ----------
+      // Em vez de uma tela de apresentação à parte, o passo a passo acontece
+      // sobre a própria interface: cada passo recorta o elemento real e
+      // explica o que ele faz. Quem está aprendendo já termina sabendo onde
+      // as coisas ficam, e não precisa traduzir um print para a tela de
+      // verdade. Sair é possível em qualquer passo.
+      const tour = (() => {
+        const overlay = document.getElementById("tour-overlay");
+        const recorte = document.getElementById("tour-recorte");
+        const balao = document.getElementById("tour-balao");
+        const contador = document.getElementById("tour-contador");
+        const titulo = document.getElementById("tour-titulo");
+        const texto = document.getElementById("tour-texto");
+        const btnAnterior = document.getElementById("tour-anterior");
+        const btnProximo = document.getElementById("tour-proximo");
+        const btnPular = document.getElementById("tour-pular");
+
+        // Folga entre o recorte e o balão, e das bordas da janela.
+        const MARGEM = 14;
+
+        const PASSOS = [
+          {
+            titulo: "Bem-vindo ao Agente de Conferência Fiscal",
+            texto:
+              "Esta plataforma confere notas de uso e consumo das TOPs 1724 e 201, " +
+              "comparando CFOP, CST e UF de origem com as regras fiscais. Vamos " +
+              "percorrer a tela juntos — leva menos de um minuto.",
+          },
+          {
+            alvo: "#btnVerRegras",
+            titulo: "As regras usadas na conferência",
+            texto:
+              "Antes de validar qualquer coisa, vale conhecer o critério. Este " +
+              "botão abre a tabela de CFOP e CST que o agente aplica, por UF de " +
+              "origem. É a mesma referência que você usaria à mão.",
+          },
+          {
+            alvo: ".seg",
+            titulo: "Dois jeitos de conferir",
+            texto:
+              "Por chave você confere uma nota específica. Por período, o agente " +
+              "busca sozinho as notas pendentes entre duas datas. Comece pelo que " +
+              "tiver em mãos.",
+          },
+          {
+            aba: "chave",
+            alvo: "#chaveNfe",
+            titulo: "Conferindo uma nota pela chave",
+            texto:
+              "Cole aqui os 44 dígitos da chave de acesso da NF-e. Pode colar com " +
+              "pontos ou espaços: o campo limpa o que não for número.",
+          },
+          {
+            aba: "chave",
+            alvo: "#btnVerificar",
+            titulo: "O resultado da conferência",
+            texto:
+              "Ao verificar, o agente busca a nota no Sankhya e mostra, item a " +
+              "item, o que está de acordo e o que divergiu. Nos itens divergentes " +
+              "aparece um botão para aplicar a correção direto no Sankhya.",
+          },
+          {
+            aba: "periodo",
+            alvo: "#panel-periodo",
+            titulo: "Conferindo um período inteiro",
+            texto:
+              "Escolha a data inicial e a final. O agente procura as notas " +
+              "pendentes nesse intervalo e confere todas de uma vez — é o caminho " +
+              "para o fechamento do mês.",
+          },
+          {
+            aba: "periodo",
+            alvo: "#btnProcessarLote",
+            titulo: "O lote e a planilha",
+            texto:
+              "Terminado o lote, a tela separa as notas aprovadas das divergentes. " +
+              "Dali você abre os detalhes de cada nota ou exporta tudo em Excel " +
+              "para anexar à conferência.",
+          },
+          {
+            alvo: "#usuario-logado",
+            titulo: "As correções ficam no seu nome",
+            texto:
+              "Você entrou com o seu usuário do Sankhya, e toda correção aplicada " +
+              "fica registrada por ele. Por isso a senha é pessoal — e por isso " +
+              "convém sair ao deixar o computador.",
+          },
+          {
+            alvo: "#btnTour",
+            titulo: "Pronto para começar",
+            texto:
+              "É isso. Sempre que quiser rever o caminho, este botão traz o passo " +
+              "a passo de volta, de onde você estiver na tela.",
+            rotuloFinal: "Começar a usar",
+          },
+        ];
+
+        let indice = 0;
+        let ativo = false;
+        let alvoAtual = null;
+
+        const suave = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        /** Avisa o servidor que a pessoa já foi apresentada à plataforma. */
+        async function registrarConclusao() {
+          try {
+            await fetch("/tour/concluir", { method: "POST" });
+          } catch (error) {
+            // Não vale atrapalhar quem acabou de ver o tour por causa disso;
+            // no pior caso o convite reaparece no próximo login.
+            console.error("Não foi possível registrar o passo a passo:", error);
+          }
+        }
+
+        /** Troca a aba exibida usando o mesmo clique que a pessoa daria. */
+        function abrirAba(nome) {
+          const botao = document.getElementById("tab-" + nome);
+
+          if (botao && botao.getAttribute("aria-selected") !== "true") {
+            botao.click();
+          }
+        }
+
+        function alvoVisivel(elemento) {
+          if (!elemento) return false;
+
+          const rect = elemento.getBoundingClientRect();
+
+          return rect.width > 0 && rect.height > 0;
+        }
+
+        /** Recalcula recorte e balão a partir da posição atual do alvo. */
+        function reposicionar() {
+          if (!ativo) return;
+
+          const larguraBalao = balao.offsetWidth;
+          const alturaBalao = balao.offsetHeight;
+          const limiteX = window.innerWidth - larguraBalao - MARGEM;
+          const limiteY = window.innerHeight - alturaBalao - MARGEM;
+
+          if (!alvoVisivel(alvoAtual)) {
+            // Passo sem elemento: só o escurecimento, com o balão no centro.
+            recorte.classList.add("sem-alvo");
+            recorte.style.top = window.innerHeight / 2 + "px";
+            recorte.style.left = window.innerWidth / 2 + "px";
+            recorte.style.width = "0px";
+            recorte.style.height = "0px";
+
+            balao.style.top = Math.max(MARGEM, (window.innerHeight - alturaBalao) / 2) + "px";
+            balao.style.left = Math.max(MARGEM, (window.innerWidth - larguraBalao) / 2) + "px";
+
+            return;
+          }
+
+          const rect = alvoAtual.getBoundingClientRect();
+          const folga = 6;
+
+          recorte.classList.remove("sem-alvo");
+          recorte.style.top = rect.top - folga + "px";
+          recorte.style.left = rect.left - folga + "px";
+          recorte.style.width = rect.width + folga * 2 + "px";
+          recorte.style.height = rect.height + folga * 2 + "px";
+
+          // Abaixo do alvo quando couber; acima quando não couber; e, se não
+          // couber dos dois lados, encostado onde sobrar mais espaço.
+          const abaixo = rect.bottom + MARGEM;
+          const acima = rect.top - alturaBalao - MARGEM;
+
+          let topo = abaixo;
+
+          if (abaixo > limiteY) {
+            topo = acima >= MARGEM ? acima : Math.max(MARGEM, limiteY);
+          }
+
+          // Alinhado à esquerda do alvo, sem sair da janela.
+          const esquerda = Math.min(
+            Math.max(MARGEM, rect.left),
+            Math.max(MARGEM, limiteX)
+          );
+
+          balao.style.top = Math.max(MARGEM, topo) + "px";
+          balao.style.left = esquerda + "px";
+        }
+
+        function mostrarPasso(novoIndice) {
+          indice = Math.max(0, Math.min(novoIndice, PASSOS.length - 1));
+
+          const passo = PASSOS[indice];
+          const ultimo = indice === PASSOS.length - 1;
+
+          if (passo.aba) abrirAba(passo.aba);
+
+          contador.textContent = `Passo ${indice + 1} de ${PASSOS.length}`;
+          titulo.textContent = passo.titulo;
+          texto.textContent = passo.texto;
+
+          btnAnterior.disabled = indice === 0;
+          btnProximo.textContent = ultimo
+            ? passo.rotuloFinal || "Concluir"
+            : "Próximo";
+
+          alvoAtual = passo.alvo ? document.querySelector(passo.alvo) : null;
+
+          if (alvoVisivel(alvoAtual)) {
+            alvoAtual.scrollIntoView({
+              block: "center",
+              behavior: suave ? "smooth" : "auto",
+            });
+          }
+
+          // O scroll suave move o alvo depois da primeira medida, então a
+          // posição é refeita por alguns quadros até a página assentar.
+          reposicionar();
+
+          const ate = performance.now() + 600;
+
+          (function acompanharScroll() {
+            reposicionar();
+
+            if (ativo && performance.now() < ate) {
+              requestAnimationFrame(acompanharScroll);
+            }
+          })();
+
+          btnProximo.focus({ preventScroll: true });
+        }
+
+        function encerrar() {
+          if (!ativo) return;
+
+          ativo = false;
+          alvoAtual = null;
+          overlay.hidden = true;
+          document.body.style.overflow = "";
+
+          window.removeEventListener("resize", reposicionar);
+          window.removeEventListener("scroll", reposicionar, true);
+          document.removeEventListener("keydown", aoTeclar, true);
+
+          registrarConclusao();
+        }
+
+        function aoTeclar(evento) {
+          if (!ativo) return;
+
+          if (evento.key === "Escape") {
+            evento.preventDefault();
+            encerrar();
+          } else if (evento.key === "ArrowRight") {
+            evento.preventDefault();
+            avancar();
+          } else if (evento.key === "ArrowLeft") {
+            evento.preventDefault();
+            mostrarPasso(indice - 1);
+          }
+        }
+
+        function avancar() {
+          if (indice >= PASSOS.length - 1) {
+            encerrar();
+            return;
+          }
+
+          mostrarPasso(indice + 1);
+        }
+
+        function iniciar() {
+          if (ativo) return;
+
+          ativo = true;
+          overlay.hidden = false;
+
+          // Enquanto o tour conduz a navegação, o scroll é dele: rolar a
+          // página por fora deixaria o recorte apontando para o vazio.
+          document.body.style.overflow = "hidden";
+
+          window.addEventListener("resize", reposicionar);
+          window.addEventListener("scroll", reposicionar, true);
+          document.addEventListener("keydown", aoTeclar, true);
+
+          mostrarPasso(0);
+        }
+
+        btnProximo.addEventListener("click", avancar);
+        btnAnterior.addEventListener("click", () => mostrarPasso(indice - 1));
+        btnPular.addEventListener("click", encerrar);
+
+        return { iniciar };
+      })();
+
+      // O convite só aparece para quem nunca viu o passo a passo; o servidor
+      // informa isso no <body> ao renderizar a página.
+      (() => {
+        const btnTour = document.getElementById("btnTour");
+
+        btnTour.addEventListener("click", () => tour.iniciar());
+
+        if (document.body.dataset.tourPendente !== "sim") return;
+
+        const convite = new bootstrap.Modal(
+          document.getElementById("modalBoasVindas")
+        );
+
+        document.getElementById("btnIniciarTour").addEventListener("click", () => {
+          convite.hide();
+          // Esperar o modal sair de cena evita que o seu fundo escuro fique
+          // por cima do recorte do primeiro passo.
+          document
+            .getElementById("modalBoasVindas")
+            .addEventListener("hidden.bs.modal", () => tour.iniciar(), { once: true });
+        });
+
+        document.getElementById("btnDispensarTour").addEventListener("click", () => {
+          convite.hide();
+
+          // Quem dispensa também já foi apresentado: o convite não volta, e o
+          // passo a passo segue no botão do cabeçalho.
+          fetch("/tour/concluir", { method: "POST" }).catch((error) =>
+            console.error("Não foi possível registrar a dispensa do tour:", error)
+          );
+        });
+
+        convite.show();
+      })();
     </script>
   </body>
 </html>

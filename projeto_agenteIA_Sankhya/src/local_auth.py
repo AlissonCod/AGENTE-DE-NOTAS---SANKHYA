@@ -55,9 +55,27 @@ _ESQUEMA = """
         senha_hash    TEXT NOT NULL,
         criado_em     TEXT NOT NULL,
         atualizado_em TEXT NOT NULL,
-        ultimo_acesso TEXT
+        ultimo_acesso TEXT,
+        tour_em       TEXT
     )
 """
+
+# Colunas acrescentadas depois que a tabela já existia em produção. Para cada
+# uma: o tipo e, opcionalmente, um UPDATE rodado uma única vez, no momento em
+# que a coluna é criada, para dar sentido às linhas que já estavam lá.
+_COLUNAS_NOVAS = {
+    # Quando a pessoa terminou (ou dispensou) o passo a passo da plataforma.
+    # Nulo = ainda não viu, que é o que faz o tour aparecer no primeiro login.
+    #
+    # Quem já tinha senha quando esta coluna nasceu não é novato: já usa a
+    # plataforma há tempo, e receber "primeira vez acessando aqui?" seria
+    # ruído. Por isso essas linhas entram marcadas, reaproveitando a data de
+    # criação. Para elas o passo a passo fica no botão do cabeçalho.
+    "tour_em": {
+        "tipo": "TEXT",
+        "preencher": "UPDATE usuarios SET tour_em = criado_em WHERE tour_em IS NULL",
+    },
+}
 
 # Chave arbitrária e fixa do advisory lock que serializa a criação do esquema
 # no Postgres. Ver _garantir_esquema.
@@ -123,6 +141,52 @@ class _Conexao:
         return self._conexao.execute(sql, params)
 
 
+def _garantir_colunas(conexao: _Conexao, postgres: bool) -> None:
+    """Acrescenta à tabela as colunas criadas depois que ela já existia.
+
+    O CREATE TABLE IF NOT EXISTS acima não toca numa tabela que já está lá, e
+    o banco de produção foi criado antes destas colunas existirem. Sem esta
+    migração, a primeira consulta a elas quebraria o login de todo mundo.
+
+    Antes de alterar, confere o que a tabela já tem: além de evitar o erro de
+    coluna duplicada (que no Postgres abortaria a transação do login inteiro),
+    é isso que diz se a coluna acabou de nascer. O preenchimento inicial só
+    pode rodar nesse instante — repeti-lo depois atropelaria dados reais.
+    """
+    existentes = _colunas_existentes(conexao, postgres)
+
+    for coluna, definicao in _COLUNAS_NOVAS.items():
+        if coluna in existentes:
+            continue
+
+        conexao.execute(
+            f"ALTER TABLE usuarios ADD COLUMN {coluna} {definicao['tipo']}"
+        )
+
+        preencher = definicao.get("preencher")
+
+        if preencher:
+            conexao.execute(preencher)
+
+        logger.info("Coluna '%s' criada na tabela de usuários.", coluna)
+
+
+def _colunas_existentes(conexao: _Conexao, postgres: bool) -> set:
+    """Nomes das colunas que a tabela de usuários já tem."""
+    if postgres:
+        linhas = conexao.execute(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name = 'usuarios'"
+        ).fetchall()
+
+        return {linha["column_name"] for linha in linhas}
+
+    # No SQLite o PRAGMA devolve (cid, name, type, ...).
+    return {
+        linha[1] for linha in conexao.execute("PRAGMA table_info(usuarios)").fetchall()
+    }
+
+
 def _garantir_esquema(conexao: _Conexao, postgres: bool) -> None:
     """Cria a tabela na primeira conexão do processo.
 
@@ -146,6 +210,7 @@ def _garantir_esquema(conexao: _Conexao, postgres: bool) -> None:
             )
 
         conexao.execute(_ESQUEMA)
+        _garantir_colunas(conexao, postgres)
         _esquema_conferido = True
 
 
@@ -266,6 +331,46 @@ def verificar_senha(nomeusu: str, senha: str) -> bool:
     return True
 
 
+def tour_pendente(nomeusu: str) -> bool:
+    """Informa se a pessoa ainda não viu o passo a passo da plataforma.
+
+    Fica no banco, e não no navegador, porque a ideia é apresentar a
+    plataforma à pessoa — não ao computador em que ela sentou. Quem já viu
+    não é incomodado de novo ao trocar de máquina ou limpar o navegador.
+
+    Na dúvida (falha de leitura), devolve False: deixar de mostrar o tour é
+    menos ruim do que empurrá-lo na cara de quem já o dispensou.
+    """
+    chave = _chave(nomeusu)
+
+    try:
+        with _conexao() as conexao:
+            linha = conexao.execute(
+                "SELECT tour_em FROM usuarios WHERE nomeusu = ?", (chave,)
+            ).fetchone()
+    except Exception as e:
+        logger.error("Falha ao consultar o passo a passo de '%s': %s", chave, e)
+        return False
+
+    if linha is None:
+        return False
+
+    return not linha["tour_em"]
+
+
+def marcar_tour_concluido(nomeusu: str) -> None:
+    """Registra que a pessoa terminou ou dispensou o passo a passo."""
+    chave = _chave(nomeusu)
+
+    with _conexao() as conexao:
+        conexao.execute(
+            "UPDATE usuarios SET tour_em = ? WHERE nomeusu = ?",
+            (datetime.now().isoformat(timespec="seconds"), chave),
+        )
+
+    logger.info("Passo a passo concluído pelo usuário '%s'.", chave)
+
+
 def validar_forca_senha(senha: str, confirmacao: str) -> Optional[str]:
     """Valida a senha escolhida. Devolve a mensagem de erro, ou None se estiver boa."""
     senha = str(senha or "")
@@ -304,7 +409,7 @@ def listar_usuarios() -> list:
     """Lista quem já criou senha, para conferência administrativa."""
     with _conexao() as conexao:
         linhas = conexao.execute(
-            "SELECT nomeusu, codusu, criado_em, atualizado_em, ultimo_acesso "
+            "SELECT nomeusu, codusu, criado_em, atualizado_em, ultimo_acesso, tour_em "
             "FROM usuarios ORDER BY nomeusu"
         ).fetchall()
 

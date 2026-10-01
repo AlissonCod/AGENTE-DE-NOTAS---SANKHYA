@@ -30,6 +30,7 @@ from main import (
     normalizar_linhas_sankhya,
     corrigir_item_nfe,
 )
+from src import local_auth
 from src.local_auth import TAMANHO_MINIMO_SENHA
 from src.rules.icms import TABELA_DECISAO_CFOP_CST
 from src.user_auth import (
@@ -334,6 +335,15 @@ def _iniciar_sessao(usuario: dict) -> None:
     session["usuario"] = usuario
     session["login_em"] = datetime.now().isoformat(timespec="seconds")
 
+    # Quem nunca viu o passo a passo recebe o convite assim que a tela
+    # principal abre. A consulta é feita aqui, uma vez por login, para que o
+    # carregamento da página não dependa de mais uma ida ao banco.
+    try:
+        session["tour_pendente"] = local_auth.tour_pendente(usuario.get("nomeusu", ""))
+    except Exception as e:
+        logger.error("Falha ao verificar o passo a passo do usuário: %s", e)
+        session["tour_pendente"] = False
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -517,14 +527,45 @@ def sessao():
     if not usuario:
         return jsonify({"autenticado": False}), 401
 
-    return jsonify({"autenticado": True, "usuario": usuario})
+    return jsonify(
+        {
+            "autenticado": True,
+            "usuario": usuario,
+            "tour_pendente": bool(session.get("tour_pendente")),
+        }
+    )
 
 
 @app.route("/")
 @login_required
 def index():
     """Renderiza a página HTML principal da interface."""
-    return render_template("index.html")
+    return render_template(
+        "index.html", tour_pendente=bool(session.get("tour_pendente"))
+    )
+
+
+@app.route("/tour/concluir", methods=["POST"])
+@login_required_api
+def tour_concluir():
+    """Registra que a pessoa já viu o passo a passo e não precisa revê-lo.
+
+    Chamada tanto quando ela chega ao fim quanto quando dispensa o convite:
+    nos dois casos ela já foi apresentada à plataforma, e insistir seria só
+    atrapalhar. O passo a passo continua disponível pelo botão do cabeçalho.
+    """
+    usuario = usuario_logado() or {}
+
+    session["tour_pendente"] = False
+
+    try:
+        local_auth.marcar_tour_concluido(usuario.get("nomeusu", ""))
+    except Exception as e:
+        # A sessão atual já não mostra mais o convite; só a memória entre
+        # sessões se perde, o que não justifica devolver erro para a tela.
+        logger.error("Falha ao registrar a conclusão do passo a passo: %s", e)
+
+    return jsonify({"ok": True})
 
 
 @app.route("/validar", methods=["POST"])

@@ -306,7 +306,7 @@
                 <label class="form-label" for="usuario">Usuário do Sankhya</label>
                 <input
                   type="text" class="form-control" id="usuario" name="usuario"
-                  value="{{ usuario }}" placeholder="SEU.USUARIO"
+                  value="{{ usuario }}" placeholder="Seu usuário do Sankhya"
                   autocomplete="username" autocapitalize="none" spellcheck="false"
                   required {% if not usuario %}autofocus{% endif %}
                 />
@@ -316,14 +316,10 @@
                 <label class="form-label" for="email">E-mail cadastrado no Sankhya</label>
                 <input
                   type="email" class="form-control" id="email" name="email"
-                  value="{{ email }}" placeholder="seu.nome@eucamad.com.br"
+                  value="{{ email }}" placeholder="Seu email no Sankhya"
                   autocomplete="email" autocapitalize="none" spellcheck="false"
                   required {% if usuario %}autofocus{% endif %}
                 />
-                <div class="campo-ajuda">
-                  Precisa ser o mesmo e-mail que está no seu cadastro de usuário do
-                  Sankhya. É o que confirma que esta conta é sua.
-                </div>
               </div>
 
               <div class="mb-3">
